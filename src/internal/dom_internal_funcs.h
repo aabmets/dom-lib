@@ -28,7 +28,6 @@ extern "C" {
     #endif
 
     void secure_memzero(void* ptr, size_t len);
-    void secure_memzero_many(void** ptrs, size_t ptr_len, uint8_t count);
     int csprng_read_array(uint8_t* buffer, uint32_t length);
 
 
