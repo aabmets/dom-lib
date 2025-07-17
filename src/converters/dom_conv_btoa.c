@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "../dom_api.h"
-#include "../dom_csprng.h"
+#include "../dom_internal_funcs.h"
 #include "../dom_internal_defs.h"
 
 

@@ -16,36 +16,8 @@
 #include <stdalign.h>
 
 #include "../dom_api.h"
-#include "../dom_csprng.h"
+#include "../dom_internal_funcs.h"
 #include "../dom_internal_defs.h"
-
-
-#ifndef ALIGNED_ALLOC_FUNC
-#define ALIGNED_ALLOC_FUNC
-    #if defined(_WIN32)
-        #define aligned_alloc(alignment, size) _aligned_malloc(size, alignment)
-        #define aligned_free(ptr) _aligned_free(ptr)
-    #else
-        #define aligned_free(ptr) free(ptr)
-    #endif
-#endif //ALIGNED_ALLOC_FUNC
-
-
-inline void secure_memzero(void* ptr, size_t len) {
-    volatile uint8_t *p = (volatile uint8_t *)ptr;
-    while (len--) *p++ = 0u;
-    asm volatile ("" ::: "memory");
-}
-
-
-inline void secure_memzero_many(void** ptrs, size_t ptr_len, uint8_t count) {
-    for (uint8_t i = 0; i < count; ++i) {
-        size_t len = ptr_len;
-        volatile uint8_t *p = (volatile uint8_t *)ptrs[i];
-        while (len--) *p++ = 0u;
-        asm volatile ("" ::: "memory");
-    }
-}
 
 
 #ifndef DOM_CORE

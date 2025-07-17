@@ -10,11 +10,12 @@
  */
 
 
-#ifndef DOM_INTERNAL_H
-#define DOM_INTERNAL_H
+#ifndef DOM_INTERNAL_DEFS_H
+#define DOM_INTERNAL_DEFS_H
 
 
 #include <stdint.h>
+#include "dom_internal_undefs.h"
 
 #define MAX_SEC_ORDER  30  // higher orders are impractical
 
@@ -35,8 +36,4 @@
         XGLUE(dom_conv, CONV(BL1, BL2))                 // type conversion function name
 
 
-void secure_memzero(void *ptr, size_t len);
-void secure_memzero_many(void** ptrs, size_t ptr_len, uint8_t count);
-
-
-#endif //DOM_INTERNAL_H
+#endif //DOM_INTERNAL_DEFS_H

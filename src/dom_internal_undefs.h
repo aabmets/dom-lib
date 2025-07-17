@@ -11,7 +11,7 @@
 
 
 // ReSharper disable once CppMissingIncludeGuard
-#undef DOM_INTERNAL_H
+#undef DOM_INTERNAL_DEFS_H
 #undef MAX_SEC_ORDER
 #undef GLUE
 #undef XGLUE
