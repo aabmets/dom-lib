@@ -23,7 +23,8 @@
 #ifndef DOM_CORE
 #define DOM_CORE(TYPE, BL, BIT_LENGTH)                                          \
                                                                                 \
-void FN(dom_free, BL)(MTP(BL) mv) {                                             \
+void FN(dom_free, BL)(MTP(BL) mv)                                               \
+{                                                                               \
     secure_memzero(mv, mv->total_bytes);                                        \
     aligned_free(mv);                                                           \
 }                                                                               \
@@ -46,7 +47,8 @@ void FN(dom_free_many, BL)(                                                     
 }                                                                               \
                                                                                 \
                                                                                 \
-void FN(dom_clear, BL)(MTP(BL) mv) {                                            \
+void FN(dom_clear, BL)(MTP(BL) mv)                                              \
+{                                                                               \
     secure_memzero(mv->shares, mv->share_bytes);                                \
 }                                                                               \
                                                                                 \
@@ -131,7 +133,11 @@ MTP(BL) FN(dom_mask, BL)(                                                       
         return NULL;                                                            \
                                                                                 \
     TYPE* shares = (TYPE*)mv->shares;                                           \
-    csprng_read_array((uint8_t*)&shares[1], order * sizeof(TYPE));              \
+    uint8_t order_bytes = order * sizeof(TYPE);                                 \
+                                                                                \
+    int rc = csprng_read_array((uint8_t*)&shares[1], order_bytes);              \
+    if (rc)                                                                     \
+        return NULL;                                                            \
                                                                                 \
     TYPE masked = value;                                                        \
     if (domain == DOMAIN_BOOLEAN) {  /* XOR masking */                          \
@@ -173,7 +179,8 @@ MTPA(BL) FN(dom_mask_many, BL)(                                                 
 }                                                                               \
                                                                                 \
                                                                                 \
-TYPE FN(dom_unmask, BL)(MTP(BL) mv) {                                           \
+TYPE FN(dom_unmask, BL)(MTP(BL) mv)                                             \
+{                                                                               \
     TYPE* shares = (TYPE*)mv->shares;                                           \
     TYPE result = shares[0];                                                    \
     if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
@@ -197,10 +204,14 @@ void FN(dom_unmask_many, BL)(MTPA(BL) mvs, TYPE* out, uint8_t count)            
 }                                                                               \
                                                                                 \
                                                                                 \
-void FN(dom_refresh, BL)(MTP(BL) mv) {                                          \
+int FN(dom_refresh, BL)(MTP(BL) mv)                                             \
+{                                                                               \
     TYPE rnd[mv->order];                                                        \
     uint8_t order_bytes = mv->order * sizeof(TYPE);                             \
-    csprng_read_array((uint8_t*)rnd, order_bytes);                              \
+                                                                                \
+    int rc = csprng_read_array((uint8_t*)rnd, order_bytes);                     \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
     TYPE* shares = (TYPE*)mv->shares;                                           \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
@@ -217,14 +228,19 @@ void FN(dom_refresh, BL)(MTP(BL) mv) {                                          
         }                                                                       \
     }                                                                           \
     secure_memzero(rnd, order_bytes);                                           \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
-void FN(dom_refresh_many, BL)(MTPA(BL) mvs, uint8_t count)                      \
+int FN(dom_refresh_many, BL)(MTPA(BL) mvs, uint8_t count)                       \
 {                                                                               \
+    int rc = 0;                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        FN(dom_refresh, BL)(mvs[i]);                                            \
+        rc = FN(dom_refresh, BL)(mvs[i]);                                       \
+        if (rc)                                                                 \
+            return rc;                                                          \
     }                                                                           \
+    return rc;                                                                  \
 }                                                                               \
                                                                                 \
                                                                                 \

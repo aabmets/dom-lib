@@ -41,7 +41,7 @@ void            FN(dom_clear, BL)           (MTP(BL) mv);                       
 MTP(BL)         FN(dom_alloc, BL)           (domain_t domain, uint8_t order);                                           \
 MTP(BL)         FN(dom_mask, BL)            (const TYPE value, domain_t domain, uint8_t order);                         \
 TYPE            FN(dom_unmask, BL)          (MTP(BL) mv);                                                               \
-void            FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
+int             FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
 MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool zero_shares);                                       \
                                                                                                                         \
 void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, uint32_t skip_mask);                          \
@@ -49,7 +49,7 @@ void            FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count, uint32
 MTPA(BL)        FN(dom_alloc_many, BL)      (domain_t domain, uint8_t order, uint8_t count);                            \
 MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, domain_t domain, uint8_t order, uint32_t count);       \
 void            FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                   \
-void            FN(dom_refresh_many, BL)    (MTPA(BL) mvs, uint8_t count);                                              \
+int             FN(dom_refresh_many, BL)    (MTPA(BL) mvs, uint8_t count);                                              \
 MTPA(BL)        FN(dom_clone_many, BL)      (const MTP(BL) mv, bool zero_shares, uint8_t count);                        \
                                                                                                                         \
 int             FN(dom_conv, BL)            (MTP(BL) mv, domain_t target_domain);                                       \
