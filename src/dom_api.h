@@ -38,27 +38,27 @@ static_assert(
                                                                                                                         \
 void            FN(dom_free, BL)            (MTP(BL) mv);                                                               \
 void            FN(dom_clear, BL)           (MTP(BL) mv);                                                               \
-MTP(BL)         FN(dom_alloc, BL)           (domain_t domain, uint8_t order);                                           \
-MTP(BL)         FN(dom_mask, BL)            (const TYPE value, domain_t domain, uint8_t order);                         \
+MTP(BL)         FN(dom_alloc, BL)           (uint8_t order, domain_t domain);                                           \
+MTP(BL)         FN(dom_mask, BL)            (const TYPE value, uint8_t order, domain_t domain);                         \
 TYPE            FN(dom_unmask, BL)          (MTP(BL) mv);                                                               \
 int             FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
-MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool zero_shares);                                       \
+MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool clear_shares);                                      \
                                                                                                                         \
-void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, uint32_t skip_mask);                          \
-void            FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count, uint32_t skip_mask);                          \
-MTPA(BL)        FN(dom_alloc_many, BL)      (domain_t domain, uint8_t order, uint8_t count);                            \
-MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, domain_t domain, uint8_t order, uint32_t count);       \
-void            FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                   \
+void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count);                                              \
+void            FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                              \
+MTPA(BL)        FN(dom_alloc_many, BL)      (uint8_t count, uint8_t order, domain_t domain);                            \
+MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, uint8_t count, uint8_t order, domain_t domain);        \
+int             FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                   \
 int             FN(dom_refresh_many, BL)    (MTPA(BL) mvs, uint8_t count);                                              \
-MTPA(BL)        FN(dom_clone_many, BL)      (const MTP(BL) mv, bool zero_shares, uint8_t count);                        \
+MTPA(BL)        FN(dom_clone_many, BL)      (const MTP(BL) mv, uint8_t count, bool clear_shares);                       \
                                                                                                                         \
 int             FN(dom_conv, BL)            (MTP(BL) mv, domain_t target_domain);                                       \
 int             FN(dom_conv_many, BL)       (MTPA(BL) mvs, uint8_t count, domain_t target_domain);                      \
 int             FN(dom_conv_btoa, BL)       (MTP(BL) mv);                                                               \
 int             FN(dom_conv_atob, BL)       (MTP(BL) mv);                                                               \
                                                                                                                         \
-MTP(BL)         FN(dom_ksa_carry, BL)       (MTP(BL) a, MTP(BL) b);                                                     \
-MTP(BL)         FN(dom_ksa_borrow, BL)      (MTP(BL) a, MTP(BL) b);                                                     \
+int             FN(dom_ksa_carry, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
+int             FN(dom_ksa_borrow, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
                                                                                                                         \
 int             FN(dom_bool_and, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
 int             FN(dom_bool_or, BL)         (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
