@@ -33,24 +33,21 @@ struct dom_traits<UINT(BL)> {                                                   
     /* Single-instance helpers */                                                                                       \
     static void    dom_free       (mtp mv)                           { FN(dom_free, BL)(mv); }                          \
     static void    dom_clear      (mtp mv)                           { FN(dom_clear, BL)(mv); }                         \
-    static mtp     dom_alloc      (domain_t d, uint8_t o)            { return FN(dom_alloc, BL)(d, o); }                \
-    static mtp     dom_mask       (uint v, domain_t d, uint8_t o)    { return FN(dom_mask, BL)(v, d, o); }              \
+    static mtp     dom_alloc      (uint8_t o, domain_t d)            { return FN(dom_alloc, BL)(o, d); }                \
+    static mtp     dom_mask       (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }              \
     static uint    dom_unmask     (mtp mv)                           { return FN(dom_unmask, BL)(mv); }                 \
     static void    dom_refresh    (mtp mv)                           { FN(dom_refresh, BL)(mv); }                       \
     static mtp     dom_clone      (mtp mv, bool z)                   { return FN(dom_clone, BL)(mv, z); }               \
                                                                                                                         \
     /* Array helpers */                                                                                                 \
-    static void    dom_free_many       (mtpa mvs, uint8_t count, uint32_t skip_mask)                                    \
-                                       { FN(dom_free_many, BL)(mvs, count, skip_mask); }                                \
+    static void    dom_free_many       (mtpa mvs, uint8_t count)     { FN(dom_free_many, BL)(mvs, count); }             \
+    static void    dom_clear_many      (mtpa mvs, uint8_t count)     { FN(dom_clear_many, BL)(mvs, count); }            \
                                                                                                                         \
-    static void    dom_clear_many      (mtpa mvs, uint8_t count, uint32_t skip_mask)                                    \
-                                       { FN(dom_clear_many, BL)(mvs, count, skip_mask); }                               \
+    static mtpa    dom_alloc_many      (uint8_t count, uint8_t order, domain_t domain)                                  \
+                                       { return FN(dom_alloc_many, BL)(count, order, domain); }                         \
                                                                                                                         \
-    static mtpa    dom_alloc_many      (domain_t domain, uint8_t order, uint8_t count)                                  \
-                                       { return FN(dom_alloc_many, BL)(domain, order, count); }                         \
-                                                                                                                        \
-    static mtpa    dom_mask_many       (const uint* values, domain_t doman, uint8_t order, uint32_t count)              \
-                                       { return FN(dom_mask_many, BL)(values, doman, order, count); }                   \
+    static mtpa    dom_mask_many       (const uint* values, uint8_t count, uint8_t order, domain_t domain)              \
+                                       { return FN(dom_mask_many, BL)(values, count, order, domain); }                  \
                                                                                                                         \
     static void    dom_unmask_many     (mtpa mvs, uint* out, uint8_t count)                                             \
                                        { FN(dom_unmask_many, BL)(mvs, out, count); }                                    \
@@ -58,8 +55,8 @@ struct dom_traits<UINT(BL)> {                                                   
     static void    dom_refresh_many    (mtpa mvs, uint8_t count)                                                        \
                                        { FN(dom_refresh_many, BL)(mvs, count); }                                        \
                                                                                                                         \
-    static mtpa    dom_clone_many      (mtp mv, bool zero_shares, uint8_t count)                                        \
-                                       { return FN(dom_clone_many, BL)(mv, zero_shares, count); }                       \
+    static mtpa    dom_clone_many      (mtp mv, uint8_t count, bool zero_shares)                                        \
+                                       { return FN(dom_clone_many, BL)(mv, count, zero_shares); }                       \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -84,7 +81,7 @@ struct TypeDomainPair {
 //  Comprehensive test‑suite that exercises *all* public utilities
 // -----------------------------------------------------------------------------
 TEMPLATE_TEST_CASE(
-        "DOM utility functions - full coverage", "[unittest][dom]",
+        "DOM utility functions - full coverage", "[unittest][dom_utils]",
         (TypeDomainPair<uint8_t, DOMAIN_BOOLEAN>),
         (TypeDomainPair<uint8_t, DOMAIN_ARITHMETIC>),
         (TypeDomainPair<uint16_t, DOMAIN_BOOLEAN>),
@@ -105,7 +102,7 @@ TEMPLATE_TEST_CASE(
     // ---------------------------------------------------------------------
     SECTION("Single allocation initialises all meta‑data and zeroes shares")
     {
-        MaskedType* mv = traits::dom_alloc(domain, order);
+        MaskedType* mv = traits::dom_alloc(order, domain);
         REQUIRE(mv != nullptr);
         REQUIRE(mv->domain == domain);
         REQUIRE(mv->order == order);
@@ -123,14 +120,14 @@ TEMPLATE_TEST_CASE(
     SECTION("Bulk allocation produces *count* valid, independent objects")
     {
         constexpr uint8_t count = 4;
-        MaskedType** mvs = traits::dom_alloc_many(domain, order, count);
+        MaskedType** mvs = traits::dom_alloc_many(count, order, domain);
         REQUIRE(mvs != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(mvs[i] != nullptr);
             REQUIRE(mvs[i]->domain == domain);
             REQUIRE(mvs[i]->order == order);
         }
-        traits::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count);
     }
 
     // ---------------------------------------------------------------------
@@ -139,7 +136,7 @@ TEMPLATE_TEST_CASE(
         DataType value;
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType* mv = traits::dom_mask(value, domain, order);
+        MaskedType* mv = traits::dom_mask(value, order, domain);
         REQUIRE(traits::dom_unmask(mv) == value);
 
         traits::dom_free(mv);
@@ -152,14 +149,14 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> values(count);
         csprng_read_array(reinterpret_cast<uint8_t*>(values.data()), count * sizeof(DataType));
 
-        MaskedType** mvs = traits::dom_mask_many(values.data(), domain, order, count);
+        MaskedType** mvs = traits::dom_mask_many(values.data(), count, order, domain);
         REQUIRE(mvs != nullptr);
 
         std::vector<DataType> out(count, {});
         traits::dom_unmask_many(mvs, out.data(), count);
         REQUIRE(out == values);
 
-        traits::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count);
     }
 
     // ---------------------------------------------------------------------
@@ -168,7 +165,7 @@ TEMPLATE_TEST_CASE(
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType* mv = traits::dom_mask(value, domain, order);
+        MaskedType* mv = traits::dom_mask(value, order, domain);
         traits::dom_clear(mv);
 
         auto* shares = reinterpret_cast<DataType*>(mv->shares);
@@ -179,37 +176,11 @@ TEMPLATE_TEST_CASE(
     }
 
     // ---------------------------------------------------------------------
-    SECTION("clear_many honours skip‑mask semantics")
-    {
-        constexpr uint8_t count = 3;
-        std::vector<DataType> vals(count);
-        csprng_read_array(reinterpret_cast<uint8_t*>(vals.data()), count * sizeof(DataType));
-
-        MaskedType** mvs = traits::dom_mask_many(vals.data(), domain, order, count);
-        REQUIRE(mvs != nullptr);
-
-        // Skip index 0 -> binary 001
-        constexpr uint32_t skip = 0b001u;
-        traits::dom_clear_many(mvs, count, skip);
-
-        // index 0 untouched
-        REQUIRE(traits::dom_unmask(mvs[0]) == vals[0]);
-        // indices 1 & 2 cleared
-        for (uint8_t idx = 1; idx < count; ++idx) {
-            auto* shares = reinterpret_cast<DataType*>(mvs[idx]->shares);
-            for (uint8_t i = 0; i < mvs[idx]->share_count; ++i)
-                REQUIRE(shares[i] == static_cast<DataType>(0));
-        }
-
-        traits::dom_free_many(mvs, count, 0u);
-    }
-
-    // ---------------------------------------------------------------------
     SECTION("refresh keeps logical value but changes at least one share")
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
-        MaskedType* mv = traits::dom_mask(value, domain, order);
+        MaskedType* mv = traits::dom_mask(value, order, domain);
         const auto* after = reinterpret_cast<const DataType*>(mv->shares);
 
         // Snapshot previous shares
@@ -241,7 +212,7 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> vals(count);
         csprng_read_array(reinterpret_cast<uint8_t*>(vals.data()), count * sizeof(DataType));
 
-        MaskedType** mvs = traits::dom_mask_many(vals.data(), domain, order, count);
+        MaskedType** mvs = traits::dom_mask_many(vals.data(), count, order, domain);
         REQUIRE(mvs != nullptr);
 
         // Preserve old shares for later comparison
@@ -262,16 +233,16 @@ TEMPLATE_TEST_CASE(
             REQUIRE(changed);  // at least one share altered
         }
 
-        traits::dom_free_many(mvs, count, 0u);
+        traits::dom_free_many(mvs, count);
     }
 
     // ---------------------------------------------------------------------
-    SECTION("clone performs a deep copy with and without zero_shares")
+    SECTION("clone performs a deep copy with and without clear_shares")
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
-        MaskedType *orig        = traits::dom_mask(value, domain, order);
+        MaskedType *orig        = traits::dom_mask(value, order, domain);
         MaskedType *clone_full  = traits::dom_clone(orig, false);
         MaskedType *clone_zero  = traits::dom_clone(orig, true);
 
@@ -303,11 +274,11 @@ TEMPLATE_TEST_CASE(
     {
         DataType value{};
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
-        MaskedType* orig = traits::dom_mask(value, domain, order);
+        MaskedType* orig = traits::dom_mask(value, order, domain);
         constexpr uint8_t count = 4;
 
         // ---- zero_shares == false ----
-        MaskedType** full_clones = traits::dom_clone_many(orig, false, count);
+        MaskedType** full_clones = traits::dom_clone_many(orig, count, false);
         REQUIRE(full_clones != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(full_clones[i] != nullptr);
@@ -325,7 +296,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(std::memcmp(full_clones[i], orig, orig->total_bytes) == 0);
 
         // ---- zero_shares == true ----
-        MaskedType** zero_clones = traits::dom_clone_many(orig, true, count);
+        MaskedType** zero_clones = traits::dom_clone_many(orig, count, true);
         REQUIRE(zero_clones != nullptr);
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(zero_clones[i] != nullptr);
@@ -334,24 +305,8 @@ TEMPLATE_TEST_CASE(
                 REQUIRE(shares[s] == static_cast<DataType>(0));
         }
 
-        traits::dom_free_many(full_clones, count, 0u);
-        traits::dom_free_many(zero_clones, count, 0u);
+        traits::dom_free_many(full_clones, count);
+        traits::dom_free_many(zero_clones, count);
         traits::dom_free(orig);
-    }
-
-    // ---------------------------------------------------------------------
-    SECTION("free_many honours skip‑mask by leaving chosen items alive")
-    {
-        constexpr uint8_t count = 3;
-        MaskedType** mvs = traits::dom_alloc_many(domain, order, count);
-        REQUIRE(mvs != nullptr);
-
-        MaskedType* kept = mvs[1];  // keep index 1 alive
-        constexpr uint32_t skip_mask = 0b010u;  // binary: keep index‑1
-        traits::dom_free_many(mvs, count, skip_mask);
-
-        // array memory was released, but kept pointer must still be valid
-        REQUIRE(kept->order == order);
-        traits::dom_free(kept);
     }
 }

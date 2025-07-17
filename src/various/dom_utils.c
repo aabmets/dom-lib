@@ -25,50 +25,38 @@
                                                                                 \
 void FN(dom_free, BL)(MTP(BL) mv)                                               \
 {                                                                               \
-    secure_memzero(mv, mv->total_bytes);                                        \
-    aligned_free(mv);                                                           \
-}                                                                               \
-                                                                                \
-                                                                                \
-/* Note: skip_mask applies only to the first 32 elements of **mvs */            \
-void FN(dom_free_many, BL)(                                                     \
-        MTPA(BL) mvs,                                                           \
-        const uint8_t count,                                                    \
-        const uint32_t skip_mask                                                \
-) {                                                                             \
-    for (uint8_t i = 0; i < count; ++i) {                                       \
-        if (i < 32 && (skip_mask >> i) & 1u)                                    \
-            continue;                                                           \
-        MTP(BL) mv = mvs[i];                                                    \
+    if (mv) {                                                                   \
         secure_memzero(mv, mv->total_bytes);                                    \
         aligned_free(mv);                                                       \
     }                                                                           \
-    aligned_free(mvs);                                                          \
+}                                                                               \
+                                                                                \
+                                                                                \
+void FN(dom_free_many, BL)(MTPA(BL) mvs, const uint8_t count)                   \
+{                                                                               \
+    if (mvs) {                                                                  \
+        for (uint8_t i = 0; i < count; ++i)                                     \
+            FN(dom_free, BL)(mvs[i]);                                           \
+        aligned_free(mvs);                                                      \
+    }                                                                           \
 }                                                                               \
                                                                                 \
                                                                                 \
 void FN(dom_clear, BL)(MTP(BL) mv)                                              \
 {                                                                               \
-    secure_memzero(mv->shares, mv->share_bytes);                                \
+    mv ? secure_memzero(mv->shares, mv->share_bytes) : NULL;                    \
 }                                                                               \
                                                                                 \
                                                                                 \
-/* Note: skip_mask applies only to the first 32 elements of **mvs */            \
-void FN(dom_clear_many, BL)(                                                    \
-        MTPA(BL) mvs,                                                           \
-        const uint8_t count,                                                    \
-        const uint32_t skip_mask                                                \
-) {                                                                             \
-    for (uint8_t i = 0; i < count; ++i) {                                       \
-        if (i < 32 && (skip_mask >> i) & 1u)                                    \
-            continue;                                                           \
-        MTP(BL) mv = mvs[i];                                                    \
-        secure_memzero(mv->shares, mv->share_bytes);                            \
-    }                                                                           \
+void FN(dom_clear_many, BL)(MTPA(BL) mvs, const uint8_t count)                  \
+{                                                                               \
+    if (mvs && count > 0)                                                       \
+        for (uint8_t i = 0; i < count; ++i)                                     \
+            FN(dom_clear, BL)(mvs[i]);                                          \
 }                                                                               \
                                                                                 \
                                                                                 \
-MTP(BL) FN(dom_alloc, BL)(const domain_t domain, const uint8_t order)           \
+MTP(BL) FN(dom_alloc, BL)(const uint8_t order, const domain_t domain)           \
 {                                                                               \
     if (order == 0 || order > MAX_SEC_ORDER)                                    \
         return NULL;                                                            \
@@ -97,9 +85,9 @@ MTP(BL) FN(dom_alloc, BL)(const domain_t domain, const uint8_t order)           
                                                                                 \
                                                                                 \
 MTPA(BL) FN(dom_alloc_many, BL)(                                                \
-        const domain_t domain,                                                  \
+        const uint8_t count,                                                    \
         const uint8_t order,                                                    \
-        const uint8_t count                                                     \
+        const domain_t domain                                                   \
 ) {                                                                             \
     if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
         return NULL;                                                            \
@@ -110,9 +98,9 @@ MTPA(BL) FN(dom_alloc_many, BL)(                                                
         return NULL;                                                            \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        mvs[i] = FN(dom_alloc, BL)(domain, order);                              \
+        mvs[i] = FN(dom_alloc, BL)(order, domain);                              \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i, 0);                                   \
+            FN(dom_free_many, BL)(mvs, i);                                      \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
@@ -122,13 +110,13 @@ MTPA(BL) FN(dom_alloc_many, BL)(                                                
                                                                                 \
 MTP(BL) FN(dom_mask, BL)(                                                       \
         const TYPE value,                                                       \
-        const domain_t domain,                                                  \
-        const uint8_t order                                                     \
+        const uint8_t order,                                                    \
+        const domain_t domain                                                   \
 ) {                                                                             \
     if (order == 0 || order > MAX_SEC_ORDER)                                    \
         return NULL;                                                            \
                                                                                 \
-    MTP(BL) mv = FN(dom_alloc, BL)(domain, order);                              \
+    MTP(BL) mv = FN(dom_alloc, BL)(order, domain);                              \
     if (!mv)                                                                    \
         return NULL;                                                            \
                                                                                 \
@@ -156,9 +144,9 @@ MTP(BL) FN(dom_mask, BL)(                                                       
                                                                                 \
 MTPA(BL) FN(dom_mask_many, BL)(                                                 \
         const TYPE* values,                                                     \
-        const domain_t domain,                                                  \
+        const uint8_t count,                                                    \
         const uint8_t order,                                                    \
-        const uint32_t count                                                    \
+        const domain_t domain                                                   \
 ) {                                                                             \
     if (order == 0 || order > MAX_SEC_ORDER || count < 2)                       \
         return NULL;                                                            \
@@ -169,9 +157,9 @@ MTPA(BL) FN(dom_mask_many, BL)(                                                 
         return NULL;                                                            \
                                                                                 \
     for (uint32_t i = 0; i < count; ++i) {                                      \
-        mvs[i] = FN(dom_mask, BL)(values[i], domain, order);                    \
+        mvs[i] = FN(dom_mask, BL)(values[i], order, domain);                    \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i, 0);                                   \
+            FN(dom_free_many, BL)(mvs, i);                                      \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
@@ -181,31 +169,42 @@ MTPA(BL) FN(dom_mask_many, BL)(                                                 
                                                                                 \
 TYPE FN(dom_unmask, BL)(MTP(BL) mv)                                             \
 {                                                                               \
-    TYPE* shares = (TYPE*)mv->shares;                                           \
-    TYPE result = shares[0];                                                    \
-    if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
-        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
-            result ^= shares[i];                                                \
+    if (mv) {                                                                   \
+        TYPE* shares = (TYPE*)mv->shares;                                       \
+        TYPE result = shares[0];                                                \
+        if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                \
+            for (uint8_t i = 1; i < mv->share_count; ++i) {                     \
+                result ^= shares[i];                                            \
+            }                                                                   \
+        } else { /* DOMAIN_ARITHMETIC - additive unmasking */                   \
+            for (uint8_t i = 1; i < mv->share_count; ++i) {                     \
+                result += shares[i];                                            \
+            }                                                                   \
         }                                                                       \
-    } else { /* DOMAIN_ARITHMETIC - additive unmasking */                       \
-        for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
-            result += shares[i];                                                \
-        }                                                                       \
+        return result;                                                          \
     }                                                                           \
-    return result;                                                              \
+    return (TYPE)-1;                                                            \
 }                                                                               \
                                                                                 \
                                                                                 \
-void FN(dom_unmask_many, BL)(MTPA(BL) mvs, TYPE* out, uint8_t count)            \
+int FN(dom_unmask_many, BL)(MTPA(BL) mvs, TYPE* out, uint8_t count)             \
 {                                                                               \
-    for (uint8_t i = 0; i < count; ++i) {                                       \
-        out[i] = FN(dom_unmask, BL)(mvs[i]);                                    \
+    if (mvs && out && count > 0) {                                              \
+        for (uint8_t i = 0; i < count; ++i) {                                   \
+            MTP(BL) mv = mvs[i];                                                \
+            if (!mv)                                                            \
+                return -1;                                                      \
+            out[i] = FN(dom_unmask, BL)(mv);                                    \
+        }                                                                       \
     }                                                                           \
+    return 0;                                                                   \
 }                                                                               \
                                                                                 \
                                                                                 \
 int FN(dom_refresh, BL)(MTP(BL) mv)                                             \
 {                                                                               \
+    if (!mv)                                                                    \
+        return -1;                                                              \
     TYPE rnd[mv->order];                                                        \
     uint8_t order_bytes = mv->order * sizeof(TYPE);                             \
                                                                                 \
@@ -234,25 +233,30 @@ int FN(dom_refresh, BL)(MTP(BL) mv)                                             
                                                                                 \
 int FN(dom_refresh_many, BL)(MTPA(BL) mvs, uint8_t count)                       \
 {                                                                               \
-    int rc = 0;                                                                 \
-    for (uint8_t i = 0; i < count; ++i) {                                       \
-        rc = FN(dom_refresh, BL)(mvs[i]);                                       \
-        if (rc)                                                                 \
-            return rc;                                                          \
+    if (mvs && count > 0) {                                                     \
+        int rc = 0;                                                             \
+        for (uint8_t i = 0; i < count; ++i) {                                   \
+            rc = FN(dom_refresh, BL)(mvs[i]);                                   \
+            if (rc)                                                             \
+                return rc;                                                      \
+        }                                                                       \
+        return rc;                                                              \
     }                                                                           \
-    return rc;                                                                  \
+    return -1;                                                                  \
 }                                                                               \
                                                                                 \
                                                                                 \
-MTP(BL) FN(dom_clone, BL)(const MTP(BL) mv, const bool zero_shares)             \
+MTP(BL) FN(dom_clone, BL)(const MTP(BL) mv, const bool clear_shares)            \
 {                                                                               \
+    if (!mv)                                                                    \
+        return NULL;                                                            \
     const size_t align = sizeof(void *);                                        \
     MTP(BL) clone = aligned_alloc(align, mv->total_bytes);                      \
     if (!clone)                                                                 \
         return NULL;                                                            \
                                                                                 \
     memcpy(clone, mv, mv->total_bytes);                                         \
-    if (zero_shares)                                                            \
+    if (clear_shares)                                                           \
         secure_memzero(clone->shares, clone->share_bytes);                      \
     return clone;                                                               \
 }                                                                               \
@@ -260,10 +264,10 @@ MTP(BL) FN(dom_clone, BL)(const MTP(BL) mv, const bool zero_shares)             
                                                                                 \
 MTPA(BL) FN(dom_clone_many, BL)(                                                \
         const MTP(BL) mv,                                                       \
-        const bool zero_shares,                                                 \
-        const uint8_t count                                                     \
+        const uint8_t count,                                                    \
+        const bool clear_shares                                                 \
 ) {                                                                             \
-    if (count < 2)                                                              \
+    if (!mv || count < 2)                                                       \
         return NULL;                                                            \
                                                                                 \
     const size_t align = alignof(TYPE);                                         \
@@ -272,9 +276,9 @@ MTPA(BL) FN(dom_clone_many, BL)(                                                
         return NULL;                                                            \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
-        mvs[i] = FN(dom_clone, BL)(mv, zero_shares);                            \
+        mvs[i] = FN(dom_clone, BL)(mv, clear_shares);                           \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i, 0);                                   \
+            FN(dom_free_many, BL)(mvs, i);                                      \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
