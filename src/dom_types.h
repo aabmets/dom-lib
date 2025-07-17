@@ -12,7 +12,7 @@
 #ifndef DOM_TYPES_H
 #define DOM_TYPES_H
 
-#include "dom_internal_defs.h"
+#include "internal/dom_internal_defs.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -58,6 +58,6 @@ MASKED_TYPE(64)
 }
 #endif
 
-#include "dom_internal_undefs.h"
+#include "internal/dom_internal_undefs.h"
 
 #endif //DOM_TYPES_H

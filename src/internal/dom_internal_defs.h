@@ -15,7 +15,6 @@
 
 
 #include <stdint.h>
-#include "dom_internal_undefs.h"
 
 #define MAX_SEC_ORDER  30  // higher orders are impractical
 

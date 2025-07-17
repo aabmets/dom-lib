@@ -13,7 +13,7 @@
 #define MASKING_H
 
 #include "dom_types.h"
-#include "dom_internal_defs.h"
+#include "internal/dom_internal_defs.h"
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -108,6 +108,6 @@ MASKING_FUNCTIONS_CONV_TYPE(64, 8)    // 8/1 ratio
 }
 #endif
 
-#include "dom_internal_undefs.h"
+#include "internal/dom_internal_undefs.h"
 
 #endif //MASKING_H

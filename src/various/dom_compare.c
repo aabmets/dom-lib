@@ -11,9 +11,9 @@
 
 #include <string.h>
 
-#include "../dom_api.h"
-#include "../dom_internal_funcs.h"
-#include "../dom_internal_defs.h"
+#include "dom_api.h"
+#include "internal/dom_internal_defs.h"
+#include "internal/dom_internal_funcs.h"
 
 
 #ifndef DOM_COMPARE

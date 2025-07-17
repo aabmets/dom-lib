@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <array>
 
-#include "dom_internal_funcs.h"
+#include "internal/dom_internal_funcs.h"
 
 
 // Helper function to read csprng samples only once

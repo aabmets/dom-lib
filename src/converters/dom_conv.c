@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 
-#include "../dom_api.h"
-#include "../dom_internal_defs.h"
+#include "dom_api.h"
+#include "internal/dom_internal_defs.h"
 
 
 #ifndef DOM_CONV
