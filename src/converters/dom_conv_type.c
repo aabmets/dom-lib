@@ -19,7 +19,7 @@
 #define DOM_CONV_TYPE_2TO1(BLL, BLS)                                            \
                                                                                 \
 MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     \
-    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->domain, mvs[0]->order);            \
+    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
         return NULL;                                                            \
                                                                                 \
@@ -37,7 +37,7 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     
                                                                                 \
                                                                                 \
 MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv) {                                      \
-    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(mv->domain, mv->order, 2);          \
+    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(2, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
         return NULL;                                                            \
                                                                                 \
@@ -61,7 +61,7 @@ MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv) {                                      
 #define DOM_CONV_TYPE_4TO1(BLL, BLS)                                            \
                                                                                 \
 MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     \
-    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->domain, mvs[0]->order);            \
+    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
         return NULL;                                                            \
                                                                                 \
@@ -88,7 +88,7 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     
                                                                                 \
                                                                                 \
 MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv) {                                      \
-    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(mv->domain, mv->order, 4);          \
+    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(4, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
         return NULL;                                                            \
                                                                                 \
@@ -120,7 +120,7 @@ MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv) {                                      
 #define DOM_CONV_TYPE_8TO1(BLL, BLS)                                            \
                                                                                 \
 MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     \
-    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->domain, mvs[0]->order);            \
+    MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
         return NULL;                                                            \
                                                                                 \
@@ -159,7 +159,7 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs) {                                     
                                                                                 \
                                                                                 \
 MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv) {                                      \
-    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(mv->domain, mv->order, 8);          \
+    MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(8, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
         return NULL;                                                            \
                                                                                 \

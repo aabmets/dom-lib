@@ -32,11 +32,11 @@ struct dom_traits<UINT(BLL), UINT(BLS)> {                                       
     using small_mtpa = MTPA(BLS);                                                                                              \
     using small_uint = UINT(BLS);                                                                                              \
                                                                                                                                \
-    static small_mtp     mask_small         (small_uint v, domain_t d, uint8_t o)    { return FN(dom_mask, BLS)(v, d, o); }    \
+    static small_mtp     mask_small         (small_uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BLS)(v, o, d); }    \
     static small_uint    unmask_small       (small_mtp mv)                           { return FN(dom_unmask, BLS)(mv); }       \
     static large_uint    unmask_large       (large_mtp mv)                           { return FN(dom_unmask, BLL)(mv); }       \
     static void          free_small         (small_mtp mv)                           { FN(dom_free, BLS)(mv); }                \
-    static void          free_small_many    (small_mtpa mvs, uint8_t c)              { FN(dom_free_many, BLS)(mvs, c, 0); }    \
+    static void          free_small_many    (small_mtpa mvs, uint8_t c)              { FN(dom_free_many, BLS)(mvs, c); }       \
     static void          free_large         (large_mtp mv)                           { FN(dom_free, BLL)(mv); }                \
     static large_mtp     to_large           (small_mtpa parts)                       { return FN_CONV(BLS, BLL)(parts); }      \
     static small_mtpa    to_small           (large_mtp mv)                           { return FN_CONV(BLL, BLS)(mv); }         \
@@ -68,7 +68,7 @@ static void roundtrip(uint8_t order)
 
     std::array<typename traits::small_mtp, PARTS> parts{};
     for (size_t i = 0; i < PARTS; ++i) {
-        parts[i] = traits::mask_small(chunks[i], DOMAIN_BOOLEAN, order);
+        parts[i] = traits::mask_small(chunks[i], order, DOMAIN_BOOLEAN);
         REQUIRE(parts[i] != nullptr);
     }
 
@@ -91,7 +91,7 @@ static void roundtrip(uint8_t order)
 }
 
 
-TEST_CASE("DOM type‑converter round‑trip across ratios 2,4,8", "[unittest][dom]")
+TEST_CASE("DOM type‑converter round‑trip across ratios 2,4,8", "[unittest][dom_conv_type]")
 {
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
