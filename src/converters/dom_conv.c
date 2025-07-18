@@ -18,39 +18,46 @@
 #ifndef DOM_CONV
 #define DOM_CONV(BL)                                                            \
                                                                                 \
-int FN(dom_conv, BL)(MTP(BL) mv, domain_t domain)                               \
+int FN(dom_conv, BL)(MTP(BL) mv, domain_t target_domain)                        \
 {                                                                               \
-    int(*conv)(MTP(BL)) = domain == DOMAIN_BOOLEAN                              \
-        ? FN(dom_conv_atob, BL)                                                 \
-        : FN(dom_conv_btoa, BL);                                                \
-                                                                                \
-    if (!mv || (mv->domain != domain && conv(mv)))                              \
-        return 1;                                                               \
-    return 0;                                                                   \
+    if (mv) {                                                                   \
+        if (mv->domain == target_domain)                                        \
+            return 0;                                                           \
+        int(*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                   \
+            ? FN(dom_conv_atob, BL)                                             \
+            : FN(dom_conv_btoa, BL);                                            \
+        return conv(mv);                                                        \
+    }                                                                           \
+    return -1;                                                                  \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_conv_many, BL)(MTPA(BL) mvs, uint8_t count, domain_t domain)         \
-{                                                                               \
+int FN(dom_conv_many, BL)(                                                      \
+        MTPA(BL) mvs,                                                           \
+        uint8_t count,                                                          \
+        domain_t target_domain                                                  \
+) {                                                                             \
+    if (!mvs || count < 2)                                                      \
+        return -1;                                                              \
+                                                                                \
+    int rc = 0;                                                                 \
     const uint8_t pair_count = count - 1;                                       \
-                                                                                \
-    for (uint8_t i = 0; i < pair_count; ++i) {                                  \
-        if (mvs[i]->sig != mvs[i+1]->sig) {                                     \
-            return 1;                                                           \
-        }                                                                       \
-    }                                                                           \
-                                                                                \
-    int(*conv)(MTP(BL)) = domain == DOMAIN_BOOLEAN                              \
+    int(*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                       \
         ? FN(dom_conv_atob, BL)                                                 \
         : FN(dom_conv_btoa, BL);                                                \
                                                                                 \
-    for(uint8_t i = 0; i < count; ++i) {                                        \
-        MTP(BL) mv = mvs[i];                                                    \
-        if (!mv || (mv->domain != domain && conv(mv))) {                        \
-            return 1;                                                           \
-        }                                                                       \
+    for (uint8_t i = 0; i < pair_count; ++i) {                                  \
+        MTP(BL) a = mvs[i];                                                     \
+        MTP(BL) b = mvs[i+1];                                                   \
+                                                                                \
+        if (!a || !b || a->sig != b->sig)                                       \
+            return -1;                                                          \
+                                                                                \
+        rc = conv(a);                                                           \
+        if (rc)                                                                 \
+            return rc;                                                          \
     }                                                                           \
-    return 0;                                                                   \
+    return conv(mvs[pair_count]);                                               \
 }                                                                               \
 
 #endif //DOM_CONV

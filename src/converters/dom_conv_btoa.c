@@ -24,7 +24,8 @@ static inline TYPE FN(psi, BL)(TYPE masked, TYPE mask) {                        
 }                                                                               \
                                                                                 \
 /* NOLINTNEXTLINE(bugprone-macro-parentheses, misc-no-recursion) */             \
-static TYPE* FN(convert, BL)(const TYPE* x, uint8_t n_plus1) {                  \
+static TYPE* FN(convert, BL)(const TYPE* x, uint8_t n_plus1)                    \
+{                                                                               \
     const uint8_t n = n_plus1 - 1;                                              \
     if (n == 1) {                                                               \
         TYPE* out = (TYPE*)malloc(sizeof(TYPE));                                \
@@ -37,7 +38,9 @@ static TYPE* FN(convert, BL)(const TYPE* x, uint8_t n_plus1) {                  
     const uint16_t np1_bytes = n_plus1 * sizeof(TYPE);                          \
                                                                                 \
     TYPE rnd[n];                                                                \
-    csprng_read_array((uint8_t*)rnd, n_bytes);                                  \
+    int rc = csprng_read_array((uint8_t*)rnd, n_bytes);                         \
+    if (rc)                                                                     \
+        return NULL;                                                            \
                                                                                 \
     TYPE x_mut[n_plus1];                                                        \
     memcpy(x_mut, x, np1_bytes);                                                \
@@ -56,41 +59,37 @@ static TYPE* FN(convert, BL)(const TYPE* x, uint8_t n_plus1) {                  
     }                                                                           \
                                                                                 \
     TYPE* first = FN(convert, BL)(&x_mut[1], n);                                \
-    TYPE* second = FN(convert, BL)(y, n);                                       \
-    if (!first || !second) {                                                    \
-        secure_memzero(rnd, n_bytes);                                           \
-        secure_memzero(x_mut, np1_bytes);                                       \
-        if (first)                                                              \
-            free(first);                                                        \
-        if (second)                                                             \
-            free(second);                                                       \
-        return NULL;                                                            \
-    }                                                                           \
+    if (!first)                                                                 \
+        goto cleanup;                                                           \
                                                                                 \
-    size_t buf_size = (size_t)(n - 1) * sizeof(TYPE);                           \
+    TYPE* second = FN(convert, BL)(y, n);                                       \
+    if (!second)                                                                \
+        goto cleanup;                                                           \
+                                                                                \
     TYPE* out = (TYPE*)malloc(n_bytes);                                         \
-    if (!out) {                                                                 \
-        secure_memzero(rnd, n_bytes);                                           \
-        secure_memzero(x_mut, np1_bytes);                                       \
-        secure_memzero(first, buf_size);                                        \
-        secure_memzero(second, buf_size);                                       \
-        free(first);                                                            \
-        free(second);                                                           \
-        return NULL;                                                            \
-    }                                                                           \
+    if (!out)                                                                   \
+        goto cleanup;                                                           \
+                                                                                \
     for (uint8_t i = 0; i < n - 2; ++i) {                                       \
         out[i] = first[i] + second[i];                                          \
     }                                                                           \
     out[n - 2] = first[n - 2];                                                  \
     out[n - 1] = second[n - 2];                                                 \
                                                                                 \
+    cleanup:                                                                    \
     secure_memzero(rnd, n_bytes);                                               \
     secure_memzero(x_mut, np1_bytes);                                           \
-    secure_memzero(first, buf_size);                                            \
-    secure_memzero(second, buf_size);                                           \
-    free(first);                                                                \
-    free(second);                                                               \
-    return out;                                                                 \
+    size_t buf_size = (size_t)(n - 1) * sizeof(TYPE);                           \
+    if (first) {                                                                \
+        secure_memzero(first, buf_size);                                        \
+        free(first);                                                            \
+    }                                                                           \
+    if (second) {                                                               \
+        secure_memzero(second, buf_size);                                       \
+        free(second);                                                           \
+    }                                                                           \
+    asm volatile ("" ::: "memory");                                             \
+    return out ? out : NULL;                                                    \
 }                                                                               \
 
 
@@ -103,36 +102,38 @@ DOM_BTOA_HELPERS(TYPE, BL)                                                      
 /*   the affine psi recursive decomposition method of Bettale et al.,      */   \
 /*   "Improved High-Order Conversion From Boolean to Arithmetic Masking"   */   \
 /*   Link: https://eprint.iacr.org/2018/328.pdf                            */   \
-int FN(dom_conv_btoa, BL)(MTP(BL) mv) {                                         \
-    if (mv->domain == DOMAIN_ARITHMETIC)                                        \
+int FN(dom_conv_btoa, BL)(MTP(BL) mv)                                           \
+{                                                                               \
+    if (!mv) {                                                                  \
+        return -1;                                                              \
+    } else if (mv->domain == DOMAIN_ARITHMETIC)                                 \
         return 0;                                                               \
                                                                                 \
+    uint8_t share_bytes = mv->share_bytes;                                      \
     uint8_t sc_extra = mv->share_count + 1;                                     \
     uint8_t sce_bytes = sc_extra * sizeof(TYPE);                                \
     TYPE* shares = mv->shares;                                                  \
                                                                                 \
     TYPE* tmp = (TYPE*)malloc(sce_bytes);                                       \
     if (!tmp)                                                                   \
-        return 1;                                                               \
+        return -1;                                                              \
                                                                                 \
-    memcpy(tmp, shares, mv->share_bytes);                                       \
+    memcpy(tmp, shares, share_bytes);                                           \
     tmp[mv->share_count] = (TYPE)0;                                             \
                                                                                 \
+    int rc = -1;                                                                \
     TYPE* new_shares = FN(convert, BL)(tmp, sc_extra);                          \
-    if (!new_shares) {                                                          \
-        secure_memzero(tmp, sce_bytes);                                         \
-        free(tmp);                                                              \
-        return 1;                                                               \
+    if (new_shares) {                                                           \
+        mv->domain = DOMAIN_ARITHMETIC;                                         \
+        memcpy(shares, new_shares, share_bytes);                                \
+        secure_memzero(new_shares, share_bytes);                                \
+        free(new_shares);                                                       \
+        rc = 0;                                                                 \
     }                                                                           \
-    memcpy(shares, new_shares, mv->share_bytes);                                \
-    mv->domain = DOMAIN_ARITHMETIC;                                             \
-                                                                                \
     secure_memzero(tmp, sce_bytes);                                             \
-    secure_memzero(new_shares, mv->share_bytes);                                \
     free(tmp);                                                                  \
-    free(new_shares);                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return rc;                                                                  \
 }                                                                               \
 
 #endif //DOM_CONV_BTOA
