@@ -36,7 +36,7 @@ struct dom_traits<UINT(BLL), UINT(BLS)> {                                       
     static small_uint    unmask_small       (small_mtp mv)                           { return FN(dom_unmask, BLS)(mv); }       \
     static large_uint    unmask_large       (large_mtp mv)                           { return FN(dom_unmask, BLL)(mv); }       \
     static void          free_small         (small_mtp mv)                           { FN(dom_free, BLS)(mv); }                \
-    static void          free_small_many    (small_mtpa mvs, uint8_t c)              { FN(dom_free_many, BLS)(mvs, c); }       \
+    static void          free_small_many    (small_mtpa mvs, uint8_t c, bool fa)     { FN(dom_free_many, BLS)(mvs, c, fa); }   \
     static void          free_large         (large_mtp mv)                           { FN(dom_free, BLL)(mv); }                \
     static large_mtp     to_large           (small_mtpa parts)                       { return FN_CONV(BLS, BLL)(parts); }      \
     static small_mtpa    to_small           (large_mtp mv)                           { return FN_CONV(BLL, BLS)(mv); }         \
@@ -87,7 +87,7 @@ static void roundtrip(uint8_t order)
     for (auto* mv : parts)
         traits::free_small(mv);
     traits::free_large(mv_large);
-    traits::free_small_many(back, static_cast<uint8_t>(PARTS));
+    traits::free_small_many(back, static_cast<uint8_t>(PARTS), true);
 }
 
 

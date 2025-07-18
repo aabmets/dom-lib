@@ -32,12 +32,16 @@ void FN(dom_free, BL)(MTP(BL) mv)                                               
 }                                                                               \
                                                                                 \
                                                                                 \
-void FN(dom_free_many, BL)(MTPA(BL) mvs, const uint8_t count)                   \
-{                                                                               \
+void FN(dom_free_many, BL)(                                                     \
+        MTPA(BL) mvs,                                                           \
+        const uint8_t count,                                                    \
+        bool free_array                                                         \
+) {                                                                             \
     if (mvs) {                                                                  \
         for (uint8_t i = 0; i < count; ++i)                                     \
             FN(dom_free, BL)(mvs[i]);                                           \
-        aligned_free(mvs);                                                      \
+        if (free_array)                                                         \
+            aligned_free(mvs);                                                  \
     }                                                                           \
 }                                                                               \
                                                                                 \
@@ -100,7 +104,7 @@ MTPA(BL) FN(dom_alloc_many, BL)(                                                
     for (uint8_t i = 0; i < count; ++i) {                                       \
         mvs[i] = FN(dom_alloc, BL)(order, domain);                              \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i);                                      \
+            FN(dom_free_many, BL)(mvs, i, true);                                \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
@@ -159,7 +163,7 @@ MTPA(BL) FN(dom_mask_many, BL)(                                                 
     for (uint32_t i = 0; i < count; ++i) {                                      \
         mvs[i] = FN(dom_mask, BL)(values[i], order, domain);                    \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i);                                      \
+            FN(dom_free_many, BL)(mvs, i, true);                                \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \
@@ -278,7 +282,7 @@ MTPA(BL) FN(dom_clone_many, BL)(                                                
     for (uint8_t i = 0; i < count; ++i) {                                       \
         mvs[i] = FN(dom_clone, BL)(mv, clear_shares);                           \
         if (!mvs[i]) {                                                          \
-            FN(dom_free_many, BL)(mvs, i);                                      \
+            FN(dom_free_many, BL)(mvs, i, true);                                \
             return NULL;                                                        \
         }                                                                       \
     }                                                                           \

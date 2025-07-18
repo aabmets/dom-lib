@@ -44,7 +44,7 @@ TYPE            FN(dom_unmask, BL)          (MTP(BL) mv);                       
 int             FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
 MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool clear_shares);                                      \
                                                                                                                         \
-void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count);                                              \
+void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, bool free_array);                             \
 void            FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                              \
 MTPA(BL)        FN(dom_alloc_many, BL)      (uint8_t count, uint8_t order, domain_t domain);                            \
 MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, uint8_t count, uint8_t order, domain_t domain);        \

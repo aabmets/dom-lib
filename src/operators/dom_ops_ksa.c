@@ -65,7 +65,7 @@ int FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                  
     memcpy(out->shares, g->shares, g->share_bytes);                             \
                                                                                 \
     cleanup:                                                                    \
-    FN(dom_free_many, BL)(clones, 5);                                           \
+    FN(dom_free_many, BL)(clones, 5, true);                                     \
     asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
 }                                                                               \
@@ -122,7 +122,7 @@ int FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                 
     memcpy(out->shares, g->shares, g->share_bytes);                             \
                                                                                 \
     cleanup:                                                                    \
-    FN(dom_free_many, BL)(clones, 6);                                           \
+    FN(dom_free_many, BL)(clones, 6, true);                                     \
     asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
 }                                                                               \

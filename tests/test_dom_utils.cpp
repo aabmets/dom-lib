@@ -40,8 +40,11 @@ struct dom_traits<UINT(BL)> {                                                   
     static mtp     dom_clone      (mtp mv, bool z)                   { return FN(dom_clone, BL)(mv, z); }               \
                                                                                                                         \
     /* Array helpers */                                                                                                 \
-    static void    dom_free_many       (mtpa mvs, uint8_t count)     { FN(dom_free_many, BL)(mvs, count); }             \
-    static void    dom_clear_many      (mtpa mvs, uint8_t count)     { FN(dom_clear_many, BL)(mvs, count); }            \
+    static void    dom_free_many       (mtpa mvs, uint8_t count, bool free_array)                                       \
+                                       { FN(dom_free_many, BL)(mvs, count, free_array); }                               \
+                                                                                                                        \
+    static void    dom_clear_many      (mtpa mvs, uint8_t count)                                                        \
+                                       { FN(dom_clear_many, BL)(mvs, count); }                                          \
                                                                                                                         \
     static mtpa    dom_alloc_many      (uint8_t count, uint8_t order, domain_t domain)                                  \
                                        { return FN(dom_alloc_many, BL)(count, order, domain); }                         \
@@ -127,7 +130,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(mvs[i]->domain == domain);
             REQUIRE(mvs[i]->order == order);
         }
-        traits::dom_free_many(mvs, count);
+        traits::dom_free_many(mvs, count, true);
     }
 
     // ---------------------------------------------------------------------
@@ -156,7 +159,7 @@ TEMPLATE_TEST_CASE(
         traits::dom_unmask_many(mvs, out.data(), count);
         REQUIRE(out == values);
 
-        traits::dom_free_many(mvs, count);
+        traits::dom_free_many(mvs, count, true);
     }
 
     // ---------------------------------------------------------------------
@@ -233,7 +236,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(changed);  // at least one share altered
         }
 
-        traits::dom_free_many(mvs, count);
+        traits::dom_free_many(mvs, count, true);
     }
 
     // ---------------------------------------------------------------------
@@ -305,8 +308,8 @@ TEMPLATE_TEST_CASE(
                 REQUIRE(shares[s] == static_cast<DataType>(0));
         }
 
-        traits::dom_free_many(full_clones, count);
-        traits::dom_free_many(zero_clones, count);
+        traits::dom_free_many(full_clones, count, true);
+        traits::dom_free_many(zero_clones, count, true);
         traits::dom_free(orig);
     }
 }
