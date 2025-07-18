@@ -28,10 +28,11 @@ struct dom_traits<UINT(BL)> {                                                   
     using uint = UINT(BL);                                                                                              \
                                                                                                                         \
     static void    dom_free      (mtp mv)                           { FN(dom_free, BL)(mv); }                           \
-    static mtp     dom_mask      (uint v, domain_t d, uint8_t o)    { return FN(dom_mask, BL)(v, d, o); }               \
+    static mtp     dom_alloc     (uint8_t o, domain_t d)            { return FN(dom_alloc, BL)(o, d); }                 \
+    static mtp     dom_mask      (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }               \
     static uint    dom_unmask    (mtp mv)                           { return FN(dom_unmask, BL)(mv); }                  \
-    static mtp     dom_carry     (mtp a, mtp b)                     { return FN(dom_ksa_carry, BL)(a, b); }             \
-    static mtp     dom_borrow    (mtp a, mtp b)                     { return FN(dom_ksa_borrow, BL)(a, b); }            \
+    static int     dom_carry     (mtp a, mtp b, mtp out)            { return FN(dom_ksa_carry, BL)(a, b, out); }        \
+    static int     dom_borrow    (mtp a, mtp b, mtp out)            { return FN(dom_ksa_borrow, BL)(a, b, out); }       \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -92,11 +93,11 @@ static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
     T vals[2];
     csprng_read_array(reinterpret_cast<uint8_t*>(vals), sizeof(vals));
 
-    mskd_t* mv_a = traits::dom_mask(vals[0], DOMAIN_BOOLEAN, order);
-    mskd_t* mv_b = traits::dom_mask(vals[1], DOMAIN_BOOLEAN, order);
+    mskd_t* mv_a = traits::dom_mask(vals[0], order, DOMAIN_BOOLEAN);
+    mskd_t* mv_b = traits::dom_mask(vals[1], order, DOMAIN_BOOLEAN);
+    mskd_t* mv_g = traits::dom_alloc(order, DOMAIN_BOOLEAN);
 
-    mskd_t* mv_g = ksa_fn(mv_a, mv_b);
-    REQUIRE(mv_g != nullptr);
+    REQUIRE(ksa_fn(mv_a, mv_b, mv_g) == 0);
 
     T g_unmasked = traits::dom_unmask(mv_g);
     T g_expected = ref_fn(vals[0], vals[1]);
@@ -109,7 +110,7 @@ static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
 
 
 TEMPLATE_TEST_CASE("Assert KSA carry / borrow gadgets work correctly",
-        "[unittest][dom][ksa]", uint8_t, uint16_t, uint32_t, uint64_t
+        "[unittest][dom_ksa]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
     SECTION("Kogge‑Stone carry (addition prefix)") {
         auto ref_fn = ref_carry_word_shifted<TestType>;

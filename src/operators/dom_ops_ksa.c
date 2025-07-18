@@ -21,15 +21,15 @@
 #ifndef DOM_KSA
 #define DOM_KSA(BL)                                                             \
                                                                                 \
-/* NOLINTNEXTLINE(bugprone-macro-parentheses) */                                \
-MTP(BL) FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b) {                           \
-    MTP(BL) mvs[] = { a, b };                                                   \
-    if (FN(dom_conv_many, BL)(mvs, 2, DOMAIN_BOOLEAN))                          \
-        return NULL;                                                            \
+int FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                  \
+    MTP(BL) mvs[] = { a, b, out };                                              \
+    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
-    MTPA(BL) clones = FN(dom_clone_many, BL)(a, false, 5);                      \
+    MTPA(BL) clones = FN(dom_clone_many, BL)(a, 5, true);                       \
     if (!clones)                                                                \
-        return NULL;                                                            \
+        return -1;                                                              \
                                                                                 \
     MTP(BL) p = clones[0];                                                      \
     MTP(BL) g = clones[1];                                                      \
@@ -38,37 +38,48 @@ MTP(BL) FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b) {                           
     MTP(BL) g_shift = clones[4];                                                \
                                                                                 \
     FN(dom_bool_xor, BL)(a, b, p);                                              \
-    FN(dom_bool_and, BL)(a, b, g);                                              \
+    rc = FN(dom_bool_and, BL)(a, b, g);                                         \
+    if (rc)                                                                     \
+        goto cleanup;                                                           \
                                                                                 \
     const uint8_t bl = (uint8_t)a->bit_length;                                  \
     for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
-        secure_memzero(tmp->shares, tmp->share_bytes);                          \
         memcpy(p_shift->shares, p->shares, p->share_bytes);                     \
         memcpy(g_shift->shares, g->shares, g->share_bytes);                     \
                                                                                 \
         FN(dom_bool_shl, BL)(p_shift, dist);                                    \
         FN(dom_bool_shl, BL)(g_shift, dist);                                    \
                                                                                 \
-        FN(dom_bool_and, BL)(p, g_shift, tmp);                                  \
+        rc = FN(dom_bool_and, BL)(p, g_shift, tmp);                             \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
+                                                                                \
         FN(dom_bool_xor, BL)(g, tmp, g);                                        \
-        FN(dom_bool_and, BL)(p, p_shift, p);                                    \
+        secure_memzero(tmp->shares, tmp->share_bytes);                          \
+                                                                                \
+        rc = FN(dom_bool_and, BL)(p, p_shift, p);                               \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
     }                                                                           \
     FN(dom_bool_shl, BL)(g, 1);                                                 \
-    FN(dom_free_many, BL)(clones, 5, 0b10u);                                    \
+    memcpy(out->shares, g->shares, g->share_bytes);                             \
+                                                                                \
+    cleanup:                                                                    \
+    FN(dom_free_many, BL)(clones, 5);                                           \
     asm volatile ("" ::: "memory");                                             \
-    return g;                                                                   \
+    return rc;                                                                  \
 }                                                                               \
                                                                                 \
                                                                                 \
-/* NOLINTNEXTLINE(bugprone-macro-parentheses) */                                \
-MTP(BL) FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b) {                          \
-    MTP(BL) mvs[] = { a, b };                                                   \
-    if (FN(dom_conv_many, BL)(mvs, 2, DOMAIN_BOOLEAN))                          \
-        return NULL;                                                            \
+int FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                 \
+    MTP(BL) mvs[] = { a, b, out };                                              \
+    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
-    MTPA(BL) clones = FN(dom_clone_many, BL)(a, false, 6);                      \
+    MTPA(BL) clones = FN(dom_clone_many, BL)(a, 6, false);                      \
     if (!clones)                                                                \
-        return NULL;                                                            \
+        return -1;                                                              \
                                                                                 \
     MTP(BL) p = clones[0];                                                      \
     MTP(BL) g = clones[1];                                                      \
@@ -79,27 +90,41 @@ MTP(BL) FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b) {                          
                                                                                 \
     FN(dom_bool_not, BL)(a_inv);                                                \
     FN(dom_bool_xor, BL)(a_inv, b, p);                                          \
-    FN(dom_bool_and, BL)(a_inv, b, g);                                          \
+    rc = FN(dom_bool_and, BL)(a_inv, b, g);                                     \
+    if (rc)                                                                     \
+        goto cleanup;                                                           \
                                                                                 \
     const uint8_t bl = (uint8_t)a->bit_length;                                  \
     for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
-        secure_memzero(tmp->shares, tmp->share_bytes);                          \
         memcpy(p_shift->shares, p->shares, p->share_bytes);                     \
         memcpy(g_shift->shares, g->shares, g->share_bytes);                     \
                                                                                 \
         FN(dom_bool_shl, BL)(p_shift, dist);                                    \
         FN(dom_bool_shl, BL)(g_shift, dist);                                    \
                                                                                 \
-        FN(dom_bool_and, BL)(p, g_shift, tmp);                                  \
-        FN(dom_bool_and, BL)(g, tmp, g_shift);                                  \
+        rc = FN(dom_bool_and, BL)(p, g_shift, tmp);                             \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
+                                                                                \
+        rc = FN(dom_bool_and, BL)(g, tmp, g_shift);                             \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
+                                                                                \
         FN(dom_bool_xor, BL)(g, tmp, g);                                        \
+        secure_memzero(tmp->shares, tmp->share_bytes);                          \
         FN(dom_bool_xor, BL)(g, g_shift, g);                                    \
-        FN(dom_bool_and, BL)(p, p_shift, p);                                    \
+                                                                                \
+        rc = FN(dom_bool_and, BL)(p, p_shift, p);                               \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
     }                                                                           \
     FN(dom_bool_shl, BL)(g, 1);                                                 \
-    FN(dom_free_many, BL)(clones, 6, 0b10u);                                    \
+    memcpy(out->shares, g->shares, g->share_bytes);                             \
+                                                                                \
+    cleanup:                                                                    \
+    FN(dom_free_many, BL)(clones, 6);                                           \
     asm volatile ("" ::: "memory");                                             \
-    return g;                                                                   \
+    return rc;                                                                  \
 }                                                                               \
 
 #endif //DOM_KSA
