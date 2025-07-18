@@ -27,14 +27,14 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
     if (rc)                                                                     \
         return rc;                                                              \
                                                                                 \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(DOMAIN_BOOLEAN, out->order, 5);       \
+    MTPA(BL) tmp = FN(dom_alloc_many, BL)(5, out->order, DOMAIN_BOOLEAN);       \
     if (!tmp)                                                                   \
-        return 1;                                                               \
+        return -1;                                                              \
                                                                                 \
     MTP(BL) acl = FN(dom_clone, BL)(a, false);                                  \
     MTP(BL) bcl = FN(dom_clone, BL)(b, false);                                  \
     if (!acl || !bcl) {                                                         \
-        rc = 1;                                                                 \
+        rc = -1;                                                                \
         goto cleanup;                                                           \
     }                                                                           \
                                                                                 \
@@ -48,22 +48,23 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
     if (!rc) {  /* no error */                                                  \
         FN(dom_bool_xor, BL)(a, b, t0);                                         \
         FN(dom_bool_xor, BL)(diff, b, t1);                                      \
-        FN(dom_bool_or, BL)(t0, t1, t2);                                        \
+                                                                                \
+        rc = FN(dom_bool_or, BL)(t0, t1, t2);                                   \
+        if (rc)                                                                 \
+            goto cleanup;                                                       \
+                                                                                \
         FN(dom_bool_xor, BL)(a, t2, t3);                                        \
         FN(dom_bool_shr, BL)(t3, BL - 1);                                       \
                                                                                 \
         memcpy(out->shares, t3->shares, t3->share_bytes);                       \
-        FN(dom_refresh, BL)(out);                                               \
+        rc = FN(dom_refresh, BL)(out);                                          \
     }                                                                           \
                                                                                 \
     cleanup:                                                                    \
-    secure_memzero_many((void**)tmp, out->total_bytes, 5);                      \
-    FN(dom_free_many, BL)(tmp, 5, 0);                                           \
+    FN(dom_free_many, BL)(tmp, 5, true);                                        \
     if (acl)                                                                    \
-        secure_memzero(acl, acl->total_bytes);                                  \
         FN(dom_free, BL)(acl);                                                  \
     if (bcl)                                                                    \
-        secure_memzero(bcl, bcl->total_bytes);                                  \
         FN(dom_free, BL)(bcl);                                                  \
     asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
@@ -92,24 +93,21 @@ int FN(dom_cmp_ge, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
                                                                                 \
                                                                                 \
 int FN(dom_cmp_ne, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    int rc = 0;                                                                 \
-                                                                                \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(DOMAIN_BOOLEAN, out->order, 2);       \
+    MTPA(BL) tmp = FN(dom_alloc_many, BL)(2, out->order, DOMAIN_BOOLEAN);       \
     if (!tmp)                                                                   \
-        return 1;                                                               \
+        return -1;                                                              \
                                                                                 \
     MTP(BL) lt_ab = tmp[0];                                                     \
     MTP(BL) lt_ba = tmp[1];                                                     \
                                                                                 \
-    rc  = FN(dom_cmp_lt, BL)(a, b, lt_ab);                                      \
+    int rc  = FN(dom_cmp_lt, BL)(a, b, lt_ab);                                  \
     if (!rc) {                                                                  \
         rc = FN(dom_cmp_lt, BL)(b, a, lt_ba);  /* NOLINT */                     \
         if (!rc) {                                                              \
             rc = FN(dom_bool_or, BL)(lt_ab, lt_ba, out);                        \
         }                                                                       \
     }                                                                           \
-    secure_memzero_many((void**)tmp, out->total_bytes, 2);                      \
-    FN(dom_free_many, BL)(tmp, 2, 0);                                           \
+    FN(dom_free_many, BL)(tmp, 2, true);                                        \
     asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
 }                                                                               \

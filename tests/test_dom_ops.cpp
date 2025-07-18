@@ -28,7 +28,7 @@ struct dom_traits<UINT(BL)> {                                                   
     using uint = UINT(BL);                                                                                              \
                                                                                                                         \
     static void    dom_free          (mtp mv)                           { FN(dom_free, BL)(mv); }                       \
-    static mtp     dom_mask          (uint v, domain_t d, uint8_t o)    { return FN(dom_mask, BL)(v, d, o); }           \
+    static mtp     dom_mask          (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }           \
     static uint    dom_unmask        (mtp mv)                           { return FN(dom_unmask, BL)(mv); }              \
     static int     dom_bool_and      (mtp a, mtp b, mtp o)              { return FN(dom_bool_and, BL)(a, b, o); }       \
     static int     dom_bool_or       (mtp a, mtp b, mtp o)              { return FN(dom_bool_or, BL)(a, b, o); }        \
@@ -70,9 +70,9 @@ void test_binary_operation(
 
     T values[2];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv_a = traits::dom_mask(values[0], domain, order);
-    auto* mv_b = traits::dom_mask(values[1], domain, order);
-    auto* mv_out = traits::dom_mask(0, domain, order);
+    auto* mv_a = traits::dom_mask(values[0], order, domain);
+    auto* mv_b = traits::dom_mask(values[1], order, domain);
+    auto* mv_out = traits::dom_mask(0, order, domain);
 
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
 
@@ -108,7 +108,7 @@ void test_unary_operation(
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = traits::dom_mask(values[0], domain, order);
+    auto* mv = traits::dom_mask(values[0], order, domain);
 
     REQUIRE(masked_op(mv) == 0);
 
@@ -139,7 +139,7 @@ void test_shift_rotate_operation(
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = traits::dom_mask(values[0], DOMAIN_BOOLEAN, order);
+    auto* mv = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
     uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
 
     REQUIRE(masked_op(mv, offset) == 0);
@@ -160,7 +160,7 @@ void test_shift_rotate_operation(
 
 
 TEMPLATE_TEST_CASE("Assert DOM operations work correctly",
-        "[unittest][dom]", uint8_t, uint16_t, uint32_t, uint64_t
+        "[unittest][dom_ops]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
     using traits = dom_traits<TestType>;
 

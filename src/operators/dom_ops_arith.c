@@ -23,8 +23,9 @@
 int FN(dom_arith_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    if (FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC))                       \
-        return 1;                                                               \
+    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
     TYPE sh_out[out->share_count];                                              \
                                                                                 \
@@ -42,8 +43,9 @@ int FN(dom_arith_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    
 int FN(dom_arith_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    if (FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC))                       \
-        return 1;                                                               \
+    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
     TYPE sh_out[out->share_count];                                              \
                                                                                 \
@@ -65,14 +67,17 @@ int FN(dom_arith_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    
 int FN(dom_arith_mult, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    if (FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC))                       \
-        return 1;                                                               \
+    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
     const uint32_t pair_count = out->share_count * out->order / 2;              \
     const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
-                                                                                \
     TYPE rnd[pair_count];                                                       \
-    csprng_read_array((uint8_t*)rnd, pair_bytes);                               \
+                                                                                \
+    rc = csprng_read_array((uint8_t*)rnd, pair_bytes);                          \
+    if (rc)                                                                     \
+        return rc;                                                              \
                                                                                 \
     TYPE sh_out[out->share_count];                                              \
                                                                                 \
@@ -88,12 +93,12 @@ int FN(dom_arith_mult, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   
         }                                                                       \
     }                                                                           \
     memcpy(out->shares, sh_out, out->share_bytes);                              \
-    FN(dom_refresh, BL)(out);                                                   \
+    rc = FN(dom_refresh, BL)(out);                                              \
                                                                                 \
     secure_memzero(rnd, pair_bytes);                                            \
     secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return rc;                                                                  \
 }                                                                               \
 
 #endif //DOM_OPS_ARITH
