@@ -35,7 +35,7 @@ struct dom_traits<UINT(BL)> {                                                   
     static void    dom_clear      (mtp mv)                           { FN(dom_clear, BL)(mv); }                         \
     static mtp     dom_alloc      (uint8_t o, domain_t d)            { return FN(dom_alloc, BL)(o, d); }                \
     static mtp     dom_mask       (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }              \
-    static uint    dom_unmask     (mtp mv)                           { return FN(dom_unmask, BL)(mv); }                 \
+    static uint    dom_unmask     (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }           \
     static void    dom_refresh    (mtp mv)                           { FN(dom_refresh, BL)(mv); }                       \
     static mtp     dom_clone      (mtp mv, bool z)                   { return FN(dom_clone, BL)(mv, z); }               \
                                                                                                                         \
@@ -140,7 +140,9 @@ TEMPLATE_TEST_CASE(
         csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
 
         MaskedType* mv = traits::dom_mask(value, order, domain);
-        REQUIRE(traits::dom_unmask(mv) == value);
+        DataType unmasked[1];
+        REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+        REQUIRE(unmasked[0] == value);
 
         traits::dom_free(mv);
     }
@@ -190,12 +192,14 @@ TEMPLATE_TEST_CASE(
         std::vector<DataType> before(mv->share_count);
         std::memcpy(before.data(), after, mv->share_bytes);
 
+        DataType unmasked[1];
         uint8_t retries = 3;
         bool changed = false;
 
         while (retries) {
             traits::dom_refresh(mv);
-            REQUIRE(traits::dom_unmask(mv) == value);
+            REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+            REQUIRE(unmasked[0] == value);
 
             for (uint8_t i = 0; i < mv->share_count; ++i)
                 changed |= (after[i] != before[i]);
@@ -226,9 +230,11 @@ TEMPLATE_TEST_CASE(
         }
 
         traits::dom_refresh_many(mvs, count);
+        DataType unmasked[1];
 
         for (uint8_t i = 0; i < count; ++i) {
-            REQUIRE(traits::dom_unmask(mvs[i]) == vals[i]);
+            REQUIRE(traits::dom_unmask(mvs[i], unmasked, 0) == 0);
+            REQUIRE(unmasked[0] == vals[i]);
             bool changed = false;
             const auto* after = reinterpret_cast<const DataType*>(mvs[i]->shares);
             for (uint8_t j = 0; j < mvs[i]->share_count; ++j)
@@ -257,7 +263,10 @@ TEMPLATE_TEST_CASE(
         // Mutate clone, orig must stay intact
         auto* c_shares = reinterpret_cast<DataType*>(clone_full->shares);
         c_shares[0] ^= static_cast<DataType>(1);
-        REQUIRE(traits::dom_unmask(orig) == value);
+        DataType unmasked[1];
+
+        REQUIRE(traits::dom_unmask(orig, unmasked, 0) == 0);
+        REQUIRE(unmasked[0] == value);
 
         // ---- zero_shares == true ----
         REQUIRE(clone_zero != nullptr);
@@ -294,7 +303,11 @@ TEMPLATE_TEST_CASE(
         // mutate one clone to ensure independence
         auto* shares0 = reinterpret_cast<DataType*>(full_clones[0]->shares);
         shares0[0] ^= static_cast<DataType>(1);
-        REQUIRE(traits::dom_unmask(orig) == value);
+        DataType unmasked[1];
+
+        REQUIRE(traits::dom_unmask(orig, unmasked, 0) == 0);
+        REQUIRE(unmasked[0] == value);
+
         for (uint8_t i = 1; i < count; ++i)
             REQUIRE(std::memcmp(full_clones[i], orig, orig->total_bytes) == 0);
 

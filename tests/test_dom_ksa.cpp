@@ -30,7 +30,7 @@ struct dom_traits<UINT(BL)> {                                                   
     static void    dom_free      (mtp mv)                           { FN(dom_free, BL)(mv); }                           \
     static mtp     dom_alloc     (uint8_t o, domain_t d)            { return FN(dom_alloc, BL)(o, d); }                 \
     static mtp     dom_mask      (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }               \
-    static uint    dom_unmask    (mtp mv)                           { return FN(dom_unmask, BL)(mv); }                  \
+    static uint    dom_unmask    (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }            \
     static int     dom_carry     (mtp a, mtp b, mtp out)            { return FN(dom_ksa_carry, BL)(a, b, out); }        \
     static int     dom_borrow    (mtp a, mtp b, mtp out)            { return FN(dom_ksa_borrow, BL)(a, b, out); }       \
 };                                                                                                                      \
@@ -96,12 +96,13 @@ static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
     mskd_t* mv_a = traits::dom_mask(vals[0], order, DOMAIN_BOOLEAN);
     mskd_t* mv_b = traits::dom_mask(vals[1], order, DOMAIN_BOOLEAN);
     mskd_t* mv_g = traits::dom_alloc(order, DOMAIN_BOOLEAN);
+    T unmasked[1];
 
     REQUIRE(ksa_fn(mv_a, mv_b, mv_g) == 0);
 
-    T g_unmasked = traits::dom_unmask(mv_g);
-    T g_expected = ref_fn(vals[0], vals[1]);
-    REQUIRE(g_unmasked == g_expected);
+    T expected = ref_fn(vals[0], vals[1]);
+    REQUIRE(traits::dom_unmask(mv_g, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
 
     traits::dom_free(mv_a);
     traits::dom_free(mv_b);

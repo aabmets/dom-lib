@@ -36,16 +36,16 @@ static_assert(
 // ---------------------------------------------------------------------------------------------------------------------
 #define MASKING_FUNCTIONS(TYPE, BL)                                                                                     \
                                                                                                                         \
-void            FN(dom_free, BL)            (MTP(BL) mv);                                                               \
-void            FN(dom_clear, BL)           (MTP(BL) mv);                                                               \
+int             FN(dom_free, BL)            (MTP(BL) mv);                                                               \
+int             FN(dom_clear, BL)           (MTP(BL) mv);                                                               \
 MTP(BL)         FN(dom_alloc, BL)           (uint8_t order, domain_t domain);                                           \
 MTP(BL)         FN(dom_mask, BL)            (const TYPE value, uint8_t order, domain_t domain);                         \
-TYPE            FN(dom_unmask, BL)          (MTP(BL) mv);                                                               \
+int             FN(dom_unmask, BL)          (MTP(BL) mv, TYPE* out, uint8_t index);                                     \
 int             FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
 MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool clear_shares);                                      \
                                                                                                                         \
-void            FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, bool free_array);                             \
-void            FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                              \
+int             FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, bool free_array);                             \
+int             FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                              \
 MTPA(BL)        FN(dom_alloc_many, BL)      (uint8_t count, uint8_t order, domain_t domain);                            \
 MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, uint8_t count, uint8_t order, domain_t domain);        \
 int             FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                   \

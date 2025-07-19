@@ -29,7 +29,7 @@ struct dom_traits<UINT(BL)> {                                                   
                                                                                                                         \
     static void    dom_free         (mtp mv)                           { FN(dom_free, BL)(mv); }                        \
     static mtp     dom_mask         (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }            \
-    static uint    dom_unmask       (mtp mv)                           { return FN(dom_unmask, BL)(mv); }               \
+    static uint    dom_unmask       (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }         \
     static int     dom_conv_btoa    (mtp mv)                           { return FN(dom_conv_btoa, BL)(mv); }            \
     static int     dom_conv_atob    (mtp mv)                           { return FN(dom_conv_atob, BL)(mv); }            \
                                                                                                                         \
@@ -66,19 +66,20 @@ TEMPLATE_TEST_CASE(
     // Mask expected value with boolean domain
     auto* mv = traits::dom_mask(expected, order, DOMAIN_BOOLEAN);
     REQUIRE(mv->domain == DOMAIN_BOOLEAN);
+    TestType unmasked[1];
 
     REQUIRE(traits::dom_conv_btoa(mv) == 0);
 
     // Check unmasking from the arithmetic domain
-    TestType unmasked_1 = traits::dom_unmask(mv);
-    REQUIRE(unmasked_1 == expected);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
     REQUIRE(mv->domain == DOMAIN_ARITHMETIC);
 
     REQUIRE(traits::dom_conv_atob(mv) == 0);
 
     // Check unmasking back in the boolean domain
-    TestType unmasked_2 = traits::dom_unmask(mv);
-    REQUIRE(unmasked_2 == expected);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
     REQUIRE(mv->domain == DOMAIN_BOOLEAN);
 
     traits::dom_free(mv);
@@ -103,17 +104,20 @@ TEMPLATE_TEST_CASE(
     REQUIRE(mvs != nullptr);
     for (uint8_t i = 0; i < COUNT; ++i)
         REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
+    TestType unmasked[1];
 
     REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_ARITHMETIC) == 0);
     for (uint8_t i = 0; i < COUNT; ++i) {
         REQUIRE(mvs[i]->domain == DOMAIN_ARITHMETIC);
-        CHECK(traits::dom_unmask(mvs[i]) == texts[i]);
+        REQUIRE(traits::dom_unmask(mvs[i], unmasked, 0) == 0);
+        REQUIRE(unmasked[0] == texts[i]);
     }
 
     REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_BOOLEAN) == 0);
     for (uint8_t i = 0; i < COUNT; ++i) {
         REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
-        CHECK(traits::dom_unmask(mvs[i]) == texts[i]);
+        REQUIRE(traits::dom_unmask(mvs[i], unmasked, 0) == 0);
+        REQUIRE(unmasked[0] == texts[i]);
     }
 
     traits::dom_free_many(mvs, COUNT, true);

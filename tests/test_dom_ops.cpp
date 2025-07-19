@@ -29,7 +29,7 @@ struct dom_traits<UINT(BL)> {                                                   
                                                                                                                         \
     static void    dom_free          (mtp mv)                           { FN(dom_free, BL)(mv); }                       \
     static mtp     dom_mask          (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }           \
-    static uint    dom_unmask        (mtp mv)                           { return FN(dom_unmask, BL)(mv); }              \
+    static uint    dom_unmask        (mtp mv, uint* o, uint8_t i)      { return FN(dom_unmask, BL)(mv, o, i); }         \
     static int     dom_bool_and      (mtp a, mtp b, mtp o)              { return FN(dom_bool_and, BL)(a, b, o); }       \
     static int     dom_bool_or       (mtp a, mtp b, mtp o)              { return FN(dom_bool_or, BL)(a, b, o); }        \
     static int     dom_bool_xor      (mtp a, mtp b, mtp o)              { return FN(dom_bool_xor, BL)(a, b, o); }       \
@@ -73,12 +73,13 @@ void test_binary_operation(
     auto* mv_a = traits::dom_mask(values[0], order, domain);
     auto* mv_b = traits::dom_mask(values[1], order, domain);
     auto* mv_out = traits::dom_mask(0, order, domain);
+    T unmasked[1];
 
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
 
-    T unmasked = traits::dom_unmask(mv_out);
     T expected = unmasked_op(values[0], values[1]);
-    REQUIRE(expected == unmasked);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
@@ -87,8 +88,8 @@ void test_binary_operation(
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
     REQUIRE(mv_a->domain == domain);
 
-    unmasked = traits::dom_unmask(mv_out);
-    REQUIRE(unmasked == expected);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
 
     traits::dom_free(mv_a);
     traits::dom_free(mv_b);
@@ -109,12 +110,13 @@ void test_unary_operation(
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
     auto* mv = traits::dom_mask(values[0], order, domain);
+    T unmasked[1];
 
     REQUIRE(masked_op(mv) == 0);
 
-    T unmasked = traits::dom_unmask(mv);
     T expected = unmasked_op(values[0]);
-    REQUIRE(expected == unmasked);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
@@ -141,12 +143,13 @@ void test_shift_rotate_operation(
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
     auto* mv = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
     uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
+    T unmasked[1];
 
     REQUIRE(masked_op(mv, offset) == 0);
 
-    T unmasked = traits::dom_unmask(mv);
     T expected = unmasked_op(values[0], offset);
-    REQUIRE(expected == unmasked);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
