@@ -1,0 +1,49 @@
+[project]
+name = "dom-lib-sec-eval"
+version = "1.0.0"
+description = "Security evaluation of the DOM library"
+authors = [
+   { name = "Mattias Aabmets", email = "mattias.aabmets@gmail.com" }
+]
+license = "Apache-2.0"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-xdist>=3.6.1",
+    "ruff>=0.11.7",
+    "scipy>=1.16.0",
+    "numpy>=2.2.5",
+    "scikit-learn>=1.7.0",
+    "scipy-stubs>=1.16.0.2",
+]
+
+[tool.pytest.ini_options]
+console_output_style = "count"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests"]
+markers = [
+    "run_tvla: Run TVLA side-channel security evaluation tests",
+    "run_mia: Run MIA side-channel security evaluation tests"
+]
+addopts = [
+    "--import-mode=append",
+    "--numprocesses=auto",
+    "--maxprocesses=4",
+    "--dist=worksteal"
+]
+pythonpath = [
+    ".",
+    "./src"
+]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["tests/gcmi.py"]
+
+[tool.ruff.lint]
+extend-select = ["B", "SIM"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15

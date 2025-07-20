@@ -58,3 +58,7 @@ dkms.conf
 .exclude
 .idea
 .vscode
+
+# Sec eval
+sec_eval/.venv
+sec_eval/venv
