@@ -11,13 +11,13 @@
 
 from src.base_masked_uint import BaseMaskedUint, Domain
 from src.base_uint import BaseUint, ByteOrder, IterNum
-from src.subclasses import (
-    MaskedUint8,
-    MaskedUint32,
-    MaskedUint64,
+from src.uint_subclasses import (
     Uint8,
     Uint32,
     Uint64,
+    MaskedUint8,
+    MaskedUint32,
+    MaskedUint64,
 )
 
 __all__ = [

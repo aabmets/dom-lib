@@ -30,7 +30,7 @@ markers = [
 addopts = [
     "--import-mode=append",
     "--numprocesses=auto",
-    "--maxprocesses=4",
+    "--maxprocesses=8",
     "--dist=worksteal"
 ]
 pythonpath = [
