@@ -60,9 +60,9 @@ def dom_cmp_ge(a: BaseMaskedUint, b: BaseMaskedUint, full_mask: bool = False) ->
     return out
 
 
-def dom_select(sel: BaseMaskedUint, x: BaseMaskedUint, y: BaseMaskedUint) -> BaseMaskedUint:
+def dom_select(x: BaseMaskedUint, y: BaseMaskedUint, mask: BaseMaskedUint) -> BaseMaskedUint:
     diff = ops.dom_bool_xor(x, y)
-    diff = ops.dom_bool_and(sel, diff)
+    diff = ops.dom_bool_and(mask, diff)
     out = ops.dom_bool_xor(diff, y)
     out.refresh_masks()
     return out
@@ -70,19 +70,19 @@ def dom_select(sel: BaseMaskedUint, x: BaseMaskedUint, y: BaseMaskedUint) -> Bas
 
 def dom_select_a_lt_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
     selector = dom_cmp_lt(a, b, full_mask=True)
-    return dom_select(selector, a, b)
+    return dom_select(a, b, selector)
 
 
 def dom_select_a_le_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
     selector = dom_cmp_le(a, b, full_mask=True)
-    return dom_select(selector, a, b)
+    return dom_select(a, b, selector)
 
 
 def dom_select_a_gt_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
     selector = dom_cmp_gt(a, b, full_mask=True)
-    return dom_select(selector, a, b)
+    return dom_select(a, b, selector)
 
 
 def dom_select_a_ge_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
     selector = dom_cmp_ge(a, b, full_mask=True)
-    return dom_select(selector, a, b)
+    return dom_select(a, b, selector)
