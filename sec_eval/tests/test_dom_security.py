@@ -60,7 +60,7 @@ COMPONENTS = [
 
     # Not necessary to test other comparators and selectors due to composability
     Component(sel.dom_cmp_lt, Domain.BOOLEAN, "binary"),
-    Component(sel.dom_select_a_lt_b, Domain.BOOLEAN, "binary"),
+    Component(sel.dom_select_lt, Domain.BOOLEAN, "binary"),
 ]
 
 

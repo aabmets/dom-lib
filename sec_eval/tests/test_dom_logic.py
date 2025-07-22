@@ -153,15 +153,16 @@ def test_boolean_comparators(cls, order, full_mask, test_set):
 @pytest.mark.parametrize("cls", cfg.MASKED_UINT_CLASSES)
 @pytest.mark.parametrize("order", cfg.compute_security_orders())
 @pytest.mark.parametrize("test_set", [
-    (sel.dom_select_a_lt_b, lambda a, b: a if a < b else b),
-    (sel.dom_select_a_le_b, lambda a, b: a if a <= b else b),
-    (sel.dom_select_a_gt_b, lambda a, b: a if a > b else b),
-    (sel.dom_select_a_ge_b, lambda a, b: a if a >= b else b),
+    (opr.lt, sel.dom_select_lt),
+    (opr.le, sel.dom_select_le),
+    (opr.gt, sel.dom_select_gt),
+    (opr.ge, sel.dom_select_ge),
 ])
 def test_boolean_selectors(cls, order, test_set):
-    masked_fn, ref_fn = test_set
-    values, mvs = hlp.get_many_randomly_masked_values(cls, 2, order, Domain.BOOLEAN)
+    cmp_fn, masked_fn = test_set
+    values, mvs = hlp.get_many_randomly_masked_values(cls, 4, order, Domain.BOOLEAN)
+    a_cmp, b_cmp, truth_sel, false_sel = values
 
-    expected = ref_fn(*values)
+    expected = truth_sel if cmp_fn(a_cmp, b_cmp) else false_sel
     result = masked_fn(*mvs)
     assert expected == result.unmask()

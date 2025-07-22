@@ -20,10 +20,10 @@ __all__ = [
     "dom_cmp_gt",
     "dom_cmp_ge",
     "dom_select",
-    "dom_select_a_lt_b",
-    "dom_select_a_le_b",
-    "dom_select_a_gt_b",
-    "dom_select_a_ge_b",
+    "dom_select_lt",
+    "dom_select_le",
+    "dom_select_gt",
+    "dom_select_ge",
 ]
 
 
@@ -68,21 +68,41 @@ def dom_select(a: BaseMaskedUint, b: BaseMaskedUint, mask: BaseMaskedUint) -> Ba
     return out
 
 
-def dom_select_a_lt_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
-    selector = dom_cmp_lt(a, b, full_mask=True)
-    return dom_select(a, b, selector)
+def dom_select_lt(
+        a_cmp: BaseMaskedUint,
+        b_cmp: BaseMaskedUint,
+        truth_sel: BaseMaskedUint,
+        false_sel: BaseMaskedUint
+) -> BaseMaskedUint:
+    mask = dom_cmp_lt(a_cmp, b_cmp, full_mask=True)
+    return dom_select(truth_sel, false_sel, mask)
 
 
-def dom_select_a_le_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
-    selector = dom_cmp_le(a, b, full_mask=True)
-    return dom_select(a, b, selector)
+def dom_select_le(
+        a_cmp: BaseMaskedUint,
+        b_cmp: BaseMaskedUint,
+        truth_sel: BaseMaskedUint,
+        false_sel: BaseMaskedUint
+) -> BaseMaskedUint:
+    mask = dom_cmp_le(a_cmp, b_cmp, full_mask=True)
+    return dom_select(truth_sel, false_sel, mask)
 
 
-def dom_select_a_gt_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
-    selector = dom_cmp_gt(a, b, full_mask=True)
-    return dom_select(a, b, selector)
+def dom_select_gt(
+        a_cmp: BaseMaskedUint,
+        b_cmp: BaseMaskedUint,
+        truth_sel: BaseMaskedUint,
+        false_sel: BaseMaskedUint
+) -> BaseMaskedUint:
+    mask = dom_cmp_gt(a_cmp, b_cmp, full_mask=True)
+    return dom_select(truth_sel, false_sel, mask)
 
 
-def dom_select_a_ge_b(a: BaseMaskedUint, b: BaseMaskedUint) -> BaseMaskedUint:
-    selector = dom_cmp_ge(a, b, full_mask=True)
-    return dom_select(a, b, selector)
+def dom_select_ge(
+        a_cmp: BaseMaskedUint,
+        b_cmp: BaseMaskedUint,
+        truth_sel: BaseMaskedUint,
+        false_sel: BaseMaskedUint
+) -> BaseMaskedUint:
+    mask = dom_cmp_ge(a_cmp, b_cmp, full_mask=True)
+    return dom_select(truth_sel, false_sel, mask)
