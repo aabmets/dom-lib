@@ -25,6 +25,7 @@ from sklearn.feature_selection import mutual_info_regression
 from src import BaseMaskedUint, Domain
 from src import operators as ops
 from src import converters as conv
+from src import comparators as cmp
 from tests import gcmi
 from tests import conftest as cfg
 from dataclasses import dataclass
@@ -56,6 +57,9 @@ COMPONENTS = [
     Component(ops.dom_arith_mult, Domain.ARITHMETIC, "binary"),
     Component(conv.dom_conv_btoa, Domain.BOOLEAN, "unary"),
     Component(conv.dom_conv_atob, Domain.ARITHMETIC, "unary"),
+
+    # Not necessary to test other comparators due to composability
+    Component(cmp.dom_cmp_lt, Domain.BOOLEAN, "binary"),
 ]
 
 
