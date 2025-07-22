@@ -18,6 +18,7 @@ import pytest
 from src import Domain, BaseUint
 from src import operators as ops
 from src import converters as conv
+from src import comparators as cmp
 from tests import helpers as hlp
 from tests import conftest as cfg
 
@@ -27,7 +28,8 @@ __all__ = [
     "test_dom_ksa_carry_borrow",
     "test_binary_operations",
     "test_boolean_shift_rotate",
-    "test_boolean_inversion"
+    "test_boolean_inversion",
+    "test_boolean_comparators",
 ]
 
 
@@ -124,3 +126,21 @@ def test_boolean_inversion(cls, order):
     expected = ~value
     result = ops.dom_bool_not(mv)
     assert expected == result.unmask()
+
+
+@pytest.mark.parametrize("cls", cfg.MASKED_UINT_CLASSES)
+@pytest.mark.parametrize("order", cfg.compute_security_orders())
+@pytest.mark.parametrize("test_set", [
+    (opr.lt, cmp.dom_cmp_lt),
+    (opr.le, cmp.dom_cmp_le),
+    (opr.gt, cmp.dom_cmp_gt),
+    (opr.ge, cmp.dom_cmp_ge),
+    (opr.ne, cmp.dom_cmp_ne),
+    (opr.eq, cmp.dom_cmp_eq),
+])
+def test_boolean_comparators(cls, order, test_set):
+    ref_fn, masked_fn = test_set
+    values, mvs = hlp.get_many_randomly_masked_values(cls, 2, order, Domain.BOOLEAN)
+    expected = ref_fn(*values)
+    result = masked_fn(*mvs)
+    assert int(expected) == result.unmask()
