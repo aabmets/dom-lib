@@ -33,10 +33,6 @@ struct dom_traits<UINT(BL)> {                                                   
     static void    dom_free        (mtp mv)                           { FN(dom_free, BL)(mv); }                         \
     static mtp     dom_mask        (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }             \
     static uint    dom_unmask      (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }          \
-    static int     dom_bool_and    (mtp a, mtp b, mtp o)              { return FN(dom_bool_and, BL)(a, b, o); }         \
-    static int     dom_bool_or     (mtp a, mtp b, mtp o)              { return FN(dom_bool_or, BL)(a, b, o); }          \
-    static int     dom_bool_xor    (mtp a, mtp b, mtp o)              { return FN(dom_bool_xor, BL)(a, b, o); }         \
-    static int     dom_bool_not    (mtp mv)                           { return FN(dom_bool_not, BL)(mv); }              \
     static int     dom_conv        (mtp mv, domain_t td)              { return FN(dom_conv, BL)(mv, td); }              \
     static int     dom_cmp_lt      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_lt, BL)(a, b, o, fm); }       \
     static int     dom_cmp_le      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_le, BL)(a, b, o, fm); }       \
