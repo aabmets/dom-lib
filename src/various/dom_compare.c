@@ -13,7 +13,6 @@
 
 #include "dom_api.h"
 #include "internal/dom_internal_defs.h"
-#include "internal/dom_internal_funcs.h"
 
 
 #ifndef DOM_COMPARE
@@ -31,20 +30,13 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
     if (!tmp)                                                                   \
         return -1;                                                              \
                                                                                 \
-    MTP(BL) acl = FN(dom_clone, BL)(a, false);                                  \
-    MTP(BL) bcl = FN(dom_clone, BL)(b, false);                                  \
-    if (!acl || !bcl) {                                                         \
-        rc = -1;                                                                \
-        goto cleanup;                                                           \
-    }                                                                           \
-                                                                                \
     MTP(BL) t0 = tmp[0];                                                        \
     MTP(BL) t1 = tmp[1];                                                        \
     MTP(BL) t2 = tmp[2];                                                        \
     MTP(BL) t3 = tmp[3];                                                        \
     MTP(BL) diff = tmp[4];                                                      \
                                                                                 \
-    rc = FN(dom_bool_sub, BL)(acl, bcl, diff);                                  \
+    rc = FN(dom_bool_sub, BL)(a, b, diff);                                      \
     if (!rc) {  /* no error */                                                  \
         FN(dom_bool_xor, BL)(a, b, t0);                                         \
         FN(dom_bool_xor, BL)(diff, b, t1);                                      \
@@ -62,10 +54,6 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
                                                                                 \
     cleanup:                                                                    \
     FN(dom_free_many, BL)(tmp, 5, true);                                        \
-    if (acl)                                                                    \
-        FN(dom_free, BL)(acl);                                                  \
-    if (bcl)                                                                    \
-        FN(dom_free, BL)(bcl);                                                  \
     asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
 }                                                                               \
@@ -104,7 +92,7 @@ int FN(dom_cmp_ne, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
     if (!rc) {                                                                  \
         rc = FN(dom_cmp_lt, BL)(b, a, lt_ba);  /* NOLINT */                     \
         if (!rc) {                                                              \
-            rc = FN(dom_bool_or, BL)(lt_ab, lt_ba, out);                        \
+            rc = FN(dom_bool_xor, BL)(lt_ab, lt_ba, out);                       \
         }                                                                       \
     }                                                                           \
     FN(dom_free_many, BL)(tmp, 2, true);                                        \
