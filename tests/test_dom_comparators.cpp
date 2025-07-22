@@ -61,29 +61,27 @@ TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
     INFO("masking domain = " << (domain == DOMAIN_ARITHMETIC ? "arithmetic" : "boolean"));
     INFO("full_mask = " << std::boolalpha << full_mask);
 
-    for (domain_t domain_in : { DOMAIN_ARITHMETIC, DOMAIN_BOOLEAN }) {
-        auto* mv_zero = traits::dom_mask(static_cast<TestType>(0), order, domain_in);
-        auto* mv_max  = traits::dom_mask(std::numeric_limits<TestType>::max(), order, domain_in);
-        auto* mv_out  = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
-        TestType unmasked[1];
+    auto* mv_zero = traits::dom_mask(static_cast<TestType>(0), order, domain);
+    auto* mv_max  = traits::dom_mask(std::numeric_limits<TestType>::max(), order, domain);
+    auto* mv_out  = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
+    TestType unmasked[1];
 
-        /* 0 < MAX ⇒ true */
-        REQUIRE(traits::dom_cmp_lt(mv_zero, mv_max, mv_out, full_mask) == 0);
-        REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-        const TestType exp_true = full_mask
-            ? std::numeric_limits<TestType>::max()
-            : static_cast<TestType>(1);
-        REQUIRE(unmasked[0] == exp_true);
+    /* 0 < MAX ⇒ true */
+    REQUIRE(traits::dom_cmp_lt(mv_zero, mv_max, mv_out, full_mask) == 0);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    const TestType exp_true = full_mask
+        ? std::numeric_limits<TestType>::max()
+        : static_cast<TestType>(1);
+    REQUIRE(unmasked[0] == exp_true);
 
-        /* MAX < 0 ⇒ false */
-        REQUIRE(traits::dom_cmp_lt(mv_max, mv_zero, mv_out, full_mask) == 0);
-        REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-        REQUIRE(unmasked[0] == static_cast<TestType>(0));
+    /* MAX < 0 ⇒ false */
+    REQUIRE(traits::dom_cmp_lt(mv_max, mv_zero, mv_out, full_mask) == 0);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    REQUIRE(unmasked[0] == static_cast<TestType>(0));
 
-        traits::dom_free(mv_zero);
-        traits::dom_free(mv_max);
-        traits::dom_free(mv_out);
-    }
+    traits::dom_free(mv_zero);
+    traits::dom_free(mv_max);
+    traits::dom_free(mv_out);
 }
 
 
