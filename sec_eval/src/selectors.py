@@ -60,10 +60,10 @@ def dom_cmp_ge(a: BaseMaskedUint, b: BaseMaskedUint, full_mask: bool = False) ->
     return out
 
 
-def dom_select(x: BaseMaskedUint, y: BaseMaskedUint, mask: BaseMaskedUint) -> BaseMaskedUint:
-    diff = ops.dom_bool_xor(x, y)
+def dom_select(a: BaseMaskedUint, b: BaseMaskedUint, mask: BaseMaskedUint) -> BaseMaskedUint:
+    diff = ops.dom_bool_xor(a, b)
     diff = ops.dom_bool_and(mask, diff)
-    out = ops.dom_bool_xor(diff, y)
+    out = ops.dom_bool_xor(diff, b)
     out.refresh_masks()
     return out
 
