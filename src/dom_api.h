@@ -75,12 +75,10 @@ int             FN(dom_arith_add, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);
 int             FN(dom_arith_sub, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
 int             FN(dom_arith_mult, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
                                                                                                                         \
-int             FN(dom_cmp_lt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
-int             FN(dom_cmp_le, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
-int             FN(dom_cmp_gt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
-int             FN(dom_cmp_ge, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
-int             FN(dom_cmp_ne, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
-int             FN(dom_cmp_eq, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL));                                            \
+int             FN(dom_cmp_lt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
+int             FN(dom_cmp_le, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
+int             FN(dom_cmp_gt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
+int             FN(dom_cmp_ge, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
 
 
 // ---------------------------------------------------------------------------------------------------------------------

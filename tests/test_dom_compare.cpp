@@ -38,12 +38,10 @@ struct dom_traits<UINT(BL)> {                                                   
     static int     dom_bool_xor    (mtp a, mtp b, mtp o)              { return FN(dom_bool_xor, BL)(a, b, o); }         \
     static int     dom_bool_not    (mtp mv)                           { return FN(dom_bool_not, BL)(mv); }              \
     static int     dom_conv        (mtp mv, domain_t td)              { return FN(dom_conv, BL)(mv, td); }              \
-    static int     dom_cmp_lt      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_lt, BL)(a, b, o); }           \
-    static int     dom_cmp_le      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_le, BL)(a, b, o); }           \
-    static int     dom_cmp_gt      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_gt, BL)(a, b, o); }           \
-    static int     dom_cmp_ge      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_ge, BL)(a, b, o); }           \
-    static int     dom_cmp_eq      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_eq, BL)(a, b, o); }           \
-    static int     dom_cmp_ne      (mtp a, mtp b, mtp o)              { return FN(dom_cmp_ne, BL)(a, b, o); }           \
+    static int     dom_cmp_lt      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_lt, BL)(a, b, o, fm); }       \
+    static int     dom_cmp_le      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_le, BL)(a, b, o, fm); }       \
+    static int     dom_cmp_gt      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_gt, BL)(a, b, o, fm); }       \
+    static int     dom_cmp_ge      (mtp a, mtp b, mtp o, bool fm)     { return FN(dom_cmp_ge, BL)(a, b, o, fm); }       \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -54,54 +52,18 @@ DEFINE_DOM_TRAITS(64)
 #undef DEFINE_DOM_TRAITS
 
 
-template<typename T>
-void test_compare_operation(
-        int (*masked_cmp)(
-                typename dom_traits<T>::mskd_t*,
-                typename dom_traits<T>::mskd_t*,
-                typename dom_traits<T>::mskd_t*
-        ),
-        const std::function<bool(T, T)>& unmasked_op,
-        domain_t domain)
-{
-    using traits = dom_traits<T>;
-    const int order = GENERATE_COPY(range(1, 4));
-    INFO("security order = " << order);
-
-    T values[2];
-    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv_a = traits::dom_mask(values[0], order, domain);
-    auto* mv_b = traits::dom_mask(values[1], order, domain);
-    auto* mv_out = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
-    T unmasked[1];
-
-    REQUIRE(masked_cmp(mv_a, mv_b, mv_out) == 0);
-
-    T expected = unmasked_op(values[0], values[1]);
-    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-    REQUIRE(unmasked[0] == expected);
-
-    // Assert automatic domain conversion
-    domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    traits::dom_conv(mv_a, counter_domain);
-    REQUIRE(mv_a->domain == counter_domain);
-    REQUIRE(masked_cmp(mv_a, mv_b, mv_out) == 0);
-    REQUIRE(mv_a->domain == DOMAIN_BOOLEAN);
-
-    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-    REQUIRE(unmasked[0] == expected);
-
-    traits::dom_free(mv_a);
-    traits::dom_free(mv_b);
-    traits::dom_free(mv_out);
-}
-
-
 TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
         "[unittest][dom_cmp]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
     using traits = dom_traits<TestType>;
+
     const int order = GENERATE_COPY(range(1, 4));
+    const domain_t domain = GENERATE_COPY(DOMAIN_ARITHMETIC, DOMAIN_BOOLEAN);
+    const bool full_mask = GENERATE_COPY(true, false);
+
+    INFO("security order = " << order);
+    INFO("masking domain = " << (domain == DOMAIN_ARITHMETIC ? "arithmetic" : "boolean"));
+    INFO("full_mask = " << std::boolalpha << full_mask);
 
     for (domain_t domain_in : { DOMAIN_ARITHMETIC, DOMAIN_BOOLEAN }) {
         auto* mv_zero = traits::dom_mask(static_cast<TestType>(0), order, domain_in);
@@ -109,15 +71,18 @@ TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
         auto* mv_out  = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
         TestType unmasked[1];
 
-        /* 0 < MAX ⇒ 1 */
-        REQUIRE(traits::dom_cmp_lt(mv_zero, mv_max, mv_out) == 0);
+        /* 0 < MAX ⇒ true */
+        REQUIRE(traits::dom_cmp_lt(mv_zero, mv_max, mv_out, full_mask) == 0);
         REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-        REQUIRE(unmasked[0] == 1u);
+        const TestType exp_true = full_mask
+            ? std::numeric_limits<TestType>::max()
+            : static_cast<TestType>(1);
+        REQUIRE(unmasked[0] == exp_true);
 
-        /* MAX < 0 ⇒ 0 */
-        REQUIRE(traits::dom_cmp_lt(mv_max, mv_zero, mv_out) == 0);
+        /* MAX < 0 ⇒ false */
+        REQUIRE(traits::dom_cmp_lt(mv_max, mv_zero, mv_out, full_mask) == 0);
         REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
-        REQUIRE(unmasked[0] == 0u);
+        REQUIRE(unmasked[0] == static_cast<TestType>(0));
 
         traits::dom_free(mv_zero);
         traits::dom_free(mv_max);
@@ -131,24 +96,59 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
 ) {
     using traits = dom_traits<TestType>;
 
+    const int order = GENERATE_COPY(range(1, 4));
+    const domain_t domain = GENERATE_COPY(DOMAIN_ARITHMETIC, DOMAIN_BOOLEAN);
+    const bool full_mask = GENERATE_COPY(true, false);
+
+    INFO("security order = " << order);
+    INFO("masking domain = " << (domain == DOMAIN_ARITHMETIC ? "arithmetic" : "boolean"));
+    INFO("full_mask = " << std::boolalpha << full_mask);
+
     const struct {
         const char* name;
-        int (*fn)(typename traits::mtp, typename traits::mtp, typename traits::mtp);
-        std::function<bool(TestType, TestType)> pred;
+        int (*masked_cmp)(
+            typename traits::mtp,
+            typename traits::mtp,
+            typename traits::mtp,
+            bool);
+        std::function<bool(TestType, TestType)> unmasked_op;
     } cases[] = {
         { "LT", traits::dom_cmp_lt, [](TestType a, TestType b){ return a <  b; } },
         { "LE", traits::dom_cmp_le, [](TestType a, TestType b){ return a <= b; } },
         { "GT", traits::dom_cmp_gt, [](TestType a, TestType b){ return a >  b; } },
         { "GE", traits::dom_cmp_ge, [](TestType a, TestType b){ return a >= b; } },
-        { "EQ", traits::dom_cmp_eq, [](TestType a, TestType b){ return a == b; } },
-        { "NE", traits::dom_cmp_ne, [](TestType a, TestType b){ return a != b; } },
     };
 
-    for (const auto& c : cases) {
-        SECTION(c.name) {
-            for (domain_t domain_in : { DOMAIN_BOOLEAN, DOMAIN_ARITHMETIC }) {
-                test_compare_operation<TestType>(c.fn, c.pred, domain_in);
-            }
+    for (const auto& [name, masked_cmp, unmasked_op] : cases) {
+        SECTION(name) {
+            TestType values[2];
+            csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+            auto* mv_a = traits::dom_mask(values[0], order, domain);
+            auto* mv_b = traits::dom_mask(values[1], order, domain);
+            auto* mv_out = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
+            TestType unmasked[1];
+
+            REQUIRE(masked_cmp(mv_a, mv_b, mv_out, full_mask) == 0);
+
+            const TestType expected = unmasked_op(values[0], values[1])
+                ? (full_mask ? std::numeric_limits<TestType>::max() : static_cast<TestType>(1))
+                : static_cast<TestType>(0);
+            REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+            REQUIRE(unmasked[0] == expected);
+
+            // Assert automatic domain conversion
+            domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
+            traits::dom_conv(mv_a, counter_domain);
+            REQUIRE(mv_a->domain == counter_domain);
+            REQUIRE(masked_cmp(mv_a, mv_b, mv_out, full_mask) == 0);
+            REQUIRE(mv_a->domain == DOMAIN_BOOLEAN);
+
+            REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+            REQUIRE(unmasked[0] == expected);
+
+            traits::dom_free(mv_a);
+            traits::dom_free(mv_b);
+            traits::dom_free(mv_out);
         }
     }
 }

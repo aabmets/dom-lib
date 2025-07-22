@@ -10,6 +10,7 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "dom_api.h"
 #include "internal/dom_internal_defs.h"
@@ -18,7 +19,8 @@
 #ifndef DOM_COMPARE
 #define DOM_COMPARE(BL)                                                         \
                                                                                 \
-int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
+int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
+{                                                                               \
     int rc = 0;                                                                 \
                                                                                 \
     MTP(BL) mvs[3] = { a, b, out };                                             \
@@ -48,6 +50,14 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
         FN(dom_bool_xor, BL)(a, t2, t3);                                        \
         FN(dom_bool_shr, BL)(t3, BL - 1);                                       \
                                                                                 \
+        if (full_mask) {                                                        \
+            MTP(BL) one = FN(dom_mask, BL)(1, out->order, DOMAIN_BOOLEAN);      \
+            rc = FN(dom_bool_sub, BL)(t3, one, t3);                             \
+            FN(dom_free, BL)(one);                                              \
+            if (rc)                                                             \
+                goto cleanup;                                                   \
+            FN(dom_bool_not, BL)(t3);                                           \
+        }                                                                       \
         memcpy(out->shares, t3->shares, t3->share_bytes);                       \
         rc = FN(dom_refresh, BL)(out);                                          \
     }                                                                           \
@@ -59,52 +69,30 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_cmp_le, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    int rc = FN(dom_cmp_lt, BL)(b, a, out);  /* NOLINT */                       \
-    if (!rc)                                                                    \
-        out->shares[0] ^= 0x1;                                                  \
-    return rc;                                                                  \
-}                                                                               \
-                                                                                \
-                                                                                \
-int FN(dom_cmp_gt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    return FN(dom_cmp_lt, BL)(b, a, out);  /* NOLINT */                         \
-}                                                                               \
-                                                                                \
-                                                                                \
-int FN(dom_cmp_ge, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    int rc = FN(dom_cmp_lt, BL)(a, b, out);                                     \
-    if (!rc)                                                                    \
-        out->shares[0] ^= 0x1;                                                  \
-    return rc;                                                                  \
-}                                                                               \
-                                                                                \
-                                                                                \
-int FN(dom_cmp_ne, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(2, out->order, DOMAIN_BOOLEAN);       \
-    if (!tmp)                                                                   \
-        return -1;                                                              \
-                                                                                \
-    MTP(BL) lt_ab = tmp[0];                                                     \
-    MTP(BL) lt_ba = tmp[1];                                                     \
-                                                                                \
-    int rc  = FN(dom_cmp_lt, BL)(a, b, lt_ab);                                  \
+int FN(dom_cmp_le, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
+{                                                                               \
+    int rc = FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */            \
     if (!rc) {                                                                  \
-        rc = FN(dom_cmp_lt, BL)(b, a, lt_ba);  /* NOLINT */                     \
-        if (!rc) {                                                              \
-            rc = FN(dom_bool_xor, BL)(lt_ab, lt_ba, out);                       \
-        }                                                                       \
+        UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                       \
+        out->shares[0] ^= mask;                                                 \
     }                                                                           \
-    FN(dom_free_many, BL)(tmp, 2, true);                                        \
-    asm volatile ("" ::: "memory");                                             \
     return rc;                                                                  \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_cmp_eq, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                     \
-    int rc = FN(dom_cmp_ne, BL)(a, b, out);                                     \
-    if (!rc)                                                                    \
-        out->shares[0] ^= 0x1;                                                  \
+int FN(dom_cmp_gt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
+{                                                                               \
+    return FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */              \
+}                                                                               \
+                                                                                \
+                                                                                \
+int FN(dom_cmp_ge, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
+{                                                                               \
+    int rc = FN(dom_cmp_lt, BL)(a, b, out, full_mask);                          \
+    if (!rc) {                                                                  \
+        UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                       \
+        out->shares[0] ^= mask;                                                 \
+    }                                                                           \
     return rc;                                                                  \
 }                                                                               \
 
