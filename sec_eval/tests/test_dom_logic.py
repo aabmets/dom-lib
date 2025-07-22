@@ -15,10 +15,10 @@ import typing as t
 
 import pytest
 
-from src import Domain, BaseUint
+from src import Domain, BaseUint, BaseMaskedUint
 from src import operators as ops
 from src import converters as conv
-from src import comparators as cmp
+from src import selectors as sel
 from tests import helpers as hlp
 from tests import conftest as cfg
 
@@ -30,6 +30,7 @@ __all__ = [
     "test_boolean_shift_rotate",
     "test_boolean_inversion",
     "test_boolean_comparators",
+    "test_boolean_selectors"
 ]
 
 
@@ -130,17 +131,37 @@ def test_boolean_inversion(cls, order):
 
 @pytest.mark.parametrize("cls", cfg.MASKED_UINT_CLASSES)
 @pytest.mark.parametrize("order", cfg.compute_security_orders())
+@pytest.mark.parametrize("full_mask", [True, False])
 @pytest.mark.parametrize("test_set", [
-    (opr.lt, cmp.dom_cmp_lt),
-    (opr.le, cmp.dom_cmp_le),
-    (opr.gt, cmp.dom_cmp_gt),
-    (opr.ge, cmp.dom_cmp_ge),
-    (opr.ne, cmp.dom_cmp_ne),
-    (opr.eq, cmp.dom_cmp_eq),
+    (opr.lt, sel.dom_cmp_lt),
+    (opr.le, sel.dom_cmp_le),
+    (opr.gt, sel.dom_cmp_gt),
+    (opr.ge, sel.dom_cmp_ge),
 ])
-def test_boolean_comparators(cls, order, test_set):
+def test_boolean_comparators(cls, order, full_mask, test_set):
     ref_fn, masked_fn = test_set
     values, mvs = hlp.get_many_randomly_masked_values(cls, 2, order, Domain.BOOLEAN)
+
+    result = masked_fn(*mvs, full_mask)
+    expected = ref_fn(*values)
+    if full_mask:
+        uint = cls.uint_class()
+        expected = ~(uint(expected) - 1)
+    assert expected == result.unmask()
+
+
+@pytest.mark.parametrize("cls", cfg.MASKED_UINT_CLASSES)
+@pytest.mark.parametrize("order", cfg.compute_security_orders())
+@pytest.mark.parametrize("test_set", [
+    (sel.dom_select_a_lt_b, lambda a, b: a if a < b else b),
+    (sel.dom_select_a_le_b, lambda a, b: a if a <= b else b),
+    (sel.dom_select_a_gt_b, lambda a, b: a if a > b else b),
+    (sel.dom_select_a_ge_b, lambda a, b: a if a >= b else b),
+])
+def test_boolean_selectors(cls, order, test_set):
+    masked_fn, ref_fn = test_set
+    values, mvs = hlp.get_many_randomly_masked_values(cls, 2, order, Domain.BOOLEAN)
+
     expected = ref_fn(*values)
     result = masked_fn(*mvs)
-    assert int(expected) == result.unmask()
+    assert expected == result.unmask()
