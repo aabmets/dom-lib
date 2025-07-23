@@ -9,13 +9,17 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-
 // ReSharper disable once CppMissingIncludeGuard
 #undef DOM_INTERNAL_DEFS_H
+
 #undef MAX_SEC_ORDER
+#undef ERR_MSG_LENGTH
 
 #undef GLUE
 #undef XGLUE
+
+#undef STR
+#undef XSTR
 
 #undef TYPE
 #undef UINT
@@ -31,3 +35,5 @@
 #undef FN
 #undef CONV
 #undef FN_CONV
+
+#undef THREAD_LOCAL
