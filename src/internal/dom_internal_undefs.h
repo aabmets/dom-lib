@@ -13,12 +13,21 @@
 // ReSharper disable once CppMissingIncludeGuard
 #undef DOM_INTERNAL_DEFS_H
 #undef MAX_SEC_ORDER
+
 #undef GLUE
 #undef XGLUE
+
+#undef TYPE
 #undef UINT
 #undef MT
 #undef MTP
 #undef MTPA
+
+#undef RES_UINT
+#undef RES_MTP
+#undef RES_MTPA
+
+#undef STS
 #undef FN
 #undef CONV
 #undef FN_CONV

@@ -23,13 +23,15 @@ void secure_memzero(void* ptr, size_t len) {
     #include <wincrypt.h>
     int csprng_read_array(uint8_t* buffer, const uint32_t length) {
         const unsigned long flags = BCRYPT_USE_SYSTEM_PREFERRED_RNG;
-        return BCryptGenRandom(NULL, buffer, length, flags);
+        const NTSTATUS rc = BCryptGenRandom(NULL, buffer, length, flags);
+        return rc == 0 ? 0 : -1;
     }
 #elif defined(__unix__)
     #include <fcntl.h>
     #include <unistd.h>
     int csprng_read_array(uint8_t* buffer, const uint32_t length) {
         const int fd = open("/dev/urandom", O_RDONLY);
-        return (fd >= 0 ? read(fd, buffer, length) : 0) != length;
+        const bytes = fd >= 0 ? read(fd, buffer, length) : 0;
+        return fd >= 0 && bytes == length ? 0 : -1;
     }
 #endif
