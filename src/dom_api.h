@@ -12,18 +12,16 @@
 #ifndef MASKING_H
 #define MASKING_H
 
-#include "dom_types.h"
-#include "internal/dom_internal_defs.h"
-
-#ifdef __cplusplus
-#include <cstdint>
-#include <cstdbool>
-#include <cassert>
-extern "C" {
-#else
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+
+#include "dom_types.h"
+#include "dom_errors.h"
+#include "internal/dom_internal_defs.h"
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 
@@ -36,56 +34,56 @@ static_assert(
 // ---------------------------------------------------------------------------------------------------------------------
 #define MASKING_FUNCTIONS(TYPE, BL)                                                                                     \
                                                                                                                         \
-int             FN(dom_free, BL)            (MTP(BL) mv);                                                               \
-int             FN(dom_clear, BL)           (MTP(BL) mv);                                                               \
-MTP(BL)         FN(dom_alloc, BL)           (uint8_t order, domain_t domain);                                           \
-MTP(BL)         FN(dom_mask, BL)            (const TYPE value, uint8_t order, domain_t domain);                         \
-int             FN(dom_unmask, BL)          (MTP(BL) mv, TYPE* out, uint8_t index);                                     \
-int             FN(dom_refresh, BL)         (MTP(BL) mv);                                                               \
-MTP(BL)         FN(dom_clone, BL)           (const MTP(BL) mv, bool clear_shares);                                      \
+int         FN(dom_free, BL)            (MTP(BL) mv);                                                                   \
+int         FN(dom_clear, BL)           (MTP(BL) mv);                                                                   \
+MTP(BL)     FN(dom_alloc, BL)           (uint8_t order, domain_t domain);                                               \
+MTP(BL)     FN(dom_mask, BL)            (const TYPE value, uint8_t order, domain_t domain);                             \
+int         FN(dom_unmask, BL)          (MTP(BL) mv, TYPE* out, uint8_t index);                                         \
+int         FN(dom_refresh, BL)         (MTP(BL) mv);                                                                   \
+MTP(BL)     FN(dom_clone, BL)           (const MTP(BL) mv, bool clear_shares);                                          \
                                                                                                                         \
-int             FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, bool free_array);                             \
-int             FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                              \
-MTPA(BL)        FN(dom_alloc_many, BL)      (uint8_t count, uint8_t order, domain_t domain);                            \
-MTPA(BL)        FN(dom_mask_many, BL)       (const TYPE* values, uint8_t count, uint8_t order, domain_t domain);        \
-int             FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                   \
-int             FN(dom_refresh_many, BL)    (MTPA(BL) mvs, uint8_t count);                                              \
-MTPA(BL)        FN(dom_clone_many, BL)      (const MTP(BL) mv, uint8_t count, bool clear_shares);                       \
+int         FN(dom_free_many, BL)       (MTPA(BL) mvs, uint8_t count, bool free_array);                                 \
+int         FN(dom_clear_many, BL)      (MTPA(BL) mvs, uint8_t count);                                                  \
+MTPA(BL)    FN(dom_alloc_many, BL)      (uint8_t count, uint8_t order, domain_t domain);                                \
+MTPA(BL)    FN(dom_mask_many, BL)       (const TYPE* values, uint8_t count, uint8_t order, domain_t domain);            \
+int         FN(dom_unmask_many, BL)     (MTPA(BL) mvs, TYPE* out, uint8_t count);                                       \
+int         FN(dom_refresh_many, BL)    (MTPA(BL) mvs, uint8_t count);                                                  \
+MTPA(BL)    FN(dom_clone_many, BL)      (const MTP(BL) mv, uint8_t count, bool clear_shares);                           \
                                                                                                                         \
-int             FN(dom_conv, BL)            (MTP(BL) mv, domain_t target_domain);                                       \
-int             FN(dom_conv_many, BL)       (MTPA(BL) mvs, uint8_t count, domain_t target_domain);                      \
-int             FN(dom_conv_btoa, BL)       (MTP(BL) mv);                                                               \
-int             FN(dom_conv_atob, BL)       (MTP(BL) mv);                                                               \
+int         FN(dom_conv, BL)            (MTP(BL) mv, domain_t target_domain);                                           \
+int         FN(dom_conv_many, BL)       (MTPA(BL) mvs, uint8_t count, domain_t target_domain);                          \
+int         FN(dom_conv_btoa, BL)       (MTP(BL) mv);                                                                   \
+int         FN(dom_conv_atob, BL)       (MTP(BL) mv);                                                                   \
                                                                                                                         \
-int             FN(dom_ksa_carry, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_ksa_borrow, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
+int         FN(dom_ksa_carry, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_ksa_borrow, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
                                                                                                                         \
-int             FN(dom_bool_and, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_bool_or, BL)         (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_bool_xor, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_bool_not, BL)        (MTP(BL) mv);                                                               \
-int             FN(dom_bool_shr, BL)        (MTP(BL) mv, uint8_t n);                                                    \
-int             FN(dom_bool_shl, BL)        (MTP(BL) mv, uint8_t n);                                                    \
-int             FN(dom_bool_rotr, BL)       (MTP(BL) mv, uint8_t n);                                                    \
-int             FN(dom_bool_rotl, BL)       (MTP(BL) mv, uint8_t n);                                                    \
-int             FN(dom_bool_add, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_bool_sub, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
+int         FN(dom_bool_and, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_bool_or, BL)         (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_bool_xor, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_bool_not, BL)        (MTP(BL) mv);                                                                   \
+int         FN(dom_bool_shr, BL)        (MTP(BL) mv, uint8_t n);                                                        \
+int         FN(dom_bool_shl, BL)        (MTP(BL) mv, uint8_t n);                                                        \
+int         FN(dom_bool_rotr, BL)       (MTP(BL) mv, uint8_t n);                                                        \
+int         FN(dom_bool_rotl, BL)       (MTP(BL) mv, uint8_t n);                                                        \
+int         FN(dom_bool_add, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_bool_sub, BL)        (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
                                                                                                                         \
-int             FN(dom_arith_add, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_arith_sub, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
-int             FN(dom_arith_mult, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                        \
+int         FN(dom_arith_add, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_arith_sub, BL)       (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
+int         FN(dom_arith_mult, BL)      (MTP(BL) a, MTP(BL) b, MTP(BL) out);                                            \
                                                                                                                         \
-int             FN(dom_cmp_lt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
-int             FN(dom_cmp_le, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
-int             FN(dom_cmp_gt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
-int             FN(dom_cmp_ge, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
+int         FN(dom_cmp_lt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                            \
+int         FN(dom_cmp_le, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                            \
+int         FN(dom_cmp_gt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                            \
+int         FN(dom_cmp_ge, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                            \
 
 
 // ---------------------------------------------------------------------------------------------------------------------
 #define MASKING_FUNCTIONS_CONV_TYPE(BLL, BLS)                                                                           \
                                                                                                                         \
-MTP(BLL)        FN_CONV(BLS, BLL)           (MTPA(BLS) mvs);                                                            \
-MTPA(BLS)       FN_CONV(BLL, BLS)           (MTP(BLL) mv);                                                              \
+MTP(BLL)    FNCT(BLS, BLL)              (MTPA(BLS) mvs);                                                                \
+MTPA(BLS)   FNCT(BLL, BLS)              (MTP(BLL) mv);                                                                  \
 
 
 // ---------------------------------------------------------------------------------------------------------------------

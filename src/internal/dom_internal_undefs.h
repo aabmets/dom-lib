@@ -34,6 +34,6 @@
 #undef STS
 #undef FN
 #undef CONV
-#undef FN_CONV
+#undef FNCT
 
 #undef THREAD_LOCAL

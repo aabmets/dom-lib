@@ -37,7 +37,7 @@
 #define STS(BL)             XGLUE(_u, BL)                       // short type suffix
 #define FN(NAME, BL)        XGLUE(NAME, STS(BL))                // function name with type specifier
 #define CONV(BL1, BL2)      XGLUE(STS(BL1), FN(_to, BL2))       // type conversion, expands to '_uXX_to_uYY'
-#define FN_CONV(BL1, BL2)   XGLUE(dom_conv, CONV(BL1, BL2))     // type conversion function name
+#define FNCT(BL1, BL2)      XGLUE(dom_conv, CONV(BL1, BL2))     // type conversion function name
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     #define THREAD_LOCAL _Thread_local

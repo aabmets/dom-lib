@@ -50,58 +50,64 @@ static const char* dom_error_enum_to_str(const uint8_t err)
 
 typedef enum {
     // Group 0x0: Singular utilities
-    DOM_FUNC_FREE            = 0x00,
-    DOM_FUNC_CLEAR           = 0x01,
-    DOM_FUNC_ALLOC           = 0x02,
-    DOM_FUNC_MASK            = 0x03,
-    DOM_FUNC_UNMASK          = 0x04,
-    DOM_FUNC_REFRESH         = 0x05,
-    DOM_FUNC_CLONE           = 0x06,
+    DOM_FUNC_FREE               = 0x00,
+    DOM_FUNC_CLEAR              = 0x01,
+    DOM_FUNC_ALLOC              = 0x02,
+    DOM_FUNC_MASK               = 0x03,
+    DOM_FUNC_UNMASK             = 0x04,
+    DOM_FUNC_REFRESH            = 0x05,
+    DOM_FUNC_CLONE              = 0x06,
 
     // Group 0x1: Plural utilities
-    DOM_FUNC_FREE_MANY       = 0x10,
-    DOM_FUNC_CLEAR_MANY      = 0x11,
-    DOM_FUNC_ALLOC_MANY      = 0x12,
-    DOM_FUNC_MASK_MANY       = 0x13,
-    DOM_FUNC_UNMASK_MANY     = 0x14,
-    DOM_FUNC_REFRESH_MANY    = 0x15,
-    DOM_FUNC_CLONE_MANY      = 0x16,
+    DOM_FUNC_FREE_MANY          = 0x10,
+    DOM_FUNC_CLEAR_MANY         = 0x11,
+    DOM_FUNC_ALLOC_MANY         = 0x12,
+    DOM_FUNC_MASK_MANY          = 0x13,
+    DOM_FUNC_UNMASK_MANY        = 0x14,
+    DOM_FUNC_REFRESH_MANY       = 0x15,
+    DOM_FUNC_CLONE_MANY         = 0x16,
 
     // Group 0x2: Converters
-    DOM_FUNC_CONV            = 0x20,
-    DOM_FUNC_CONV_MANY       = 0x21,
-    DOM_FUNC_CONV_BTOA       = 0x22,
-    DOM_FUNC_CONV_ATOB       = 0x23,
+    DOM_FUNC_CONV               = 0x20,
+    DOM_FUNC_CONV_MANY          = 0x21,
+    DOM_FUNC_CONV_BTOA          = 0x22,
+    DOM_FUNC_CONV_ATOB          = 0x23,
+    DOM_FUNC_CONV_TYPE_2TO1     = 0x24,
+    DOM_FUNC_CONV_TYPE_1TO2     = 0x25,
+    DOM_FUNC_CONV_TYPE_4TO1     = 0x26,
+    DOM_FUNC_CONV_TYPE_1TO4     = 0x27,
+    DOM_FUNC_CONV_TYPE_8TO1     = 0x28,
+    DOM_FUNC_CONV_TYPE_1TO8     = 0x29,
 
     // Group 0x3: Boolean math
-    DOM_FUNC_KSA_CARRY       = 0x30,
-    DOM_FUNC_KSA_BORROW      = 0x31,
-    DOM_FUNC_BOOL_AND        = 0x32,
-    DOM_FUNC_BOOL_OR         = 0x33,
-    DOM_FUNC_BOOL_XOR        = 0x34,
-    DOM_FUNC_BOOL_NOT        = 0x35,
-    DOM_FUNC_BOOL_SHR        = 0x36,
-    DOM_FUNC_BOOL_SHL        = 0x37,
-    DOM_FUNC_BOOL_ROTR       = 0x38,
-    DOM_FUNC_BOOL_ROTL       = 0x39,
-    DOM_FUNC_BOOL_ADD        = 0x3A,
-    DOM_FUNC_BOOL_SUB        = 0x3B,
+    DOM_FUNC_KSA_CARRY          = 0x30,
+    DOM_FUNC_KSA_BORROW         = 0x31,
+    DOM_FUNC_BOOL_AND           = 0x32,
+    DOM_FUNC_BOOL_OR            = 0x33,
+    DOM_FUNC_BOOL_XOR           = 0x34,
+    DOM_FUNC_BOOL_NOT           = 0x35,
+    DOM_FUNC_BOOL_SHR           = 0x36,
+    DOM_FUNC_BOOL_SHL           = 0x37,
+    DOM_FUNC_BOOL_ROTR          = 0x38,
+    DOM_FUNC_BOOL_ROTL          = 0x39,
+    DOM_FUNC_BOOL_ADD           = 0x3A,
+    DOM_FUNC_BOOL_SUB           = 0x3B,
 
     // Group 0x4: Arithmetic math
-    DOM_FUNC_ARITH_ADD       = 0x40,
-    DOM_FUNC_ARITH_SUB       = 0x41,
-    DOM_FUNC_ARITH_MULT      = 0x42,
+    DOM_FUNC_ARITH_ADD          = 0x40,
+    DOM_FUNC_ARITH_SUB          = 0x41,
+    DOM_FUNC_ARITH_MULT         = 0x42,
 
     // Group 0x5: Selectors
-    DOM_FUNC_CMP_LT          = 0x50,
-    DOM_FUNC_CMP_LE          = 0x51,
-    DOM_FUNC_CMP_GT          = 0x52,
-    DOM_FUNC_CMP_GE          = 0x53,
-    DOM_FUNC_SELECT          = 0x54,
-    DOM_FUNC_SELECT_LT       = 0x55,
-    DOM_FUNC_SELECT_LE       = 0x56,
-    DOM_FUNC_SELECT_GT       = 0x57,
-    DOM_FUNC_SELECT_GE       = 0x58,
+    DOM_FUNC_CMP_LT             = 0x50,
+    DOM_FUNC_CMP_LE             = 0x51,
+    DOM_FUNC_CMP_GT             = 0x52,
+    DOM_FUNC_CMP_GE             = 0x53,
+    DOM_FUNC_SELECT             = 0x54,
+    DOM_FUNC_SELECT_LT          = 0x55,
+    DOM_FUNC_SELECT_LE          = 0x56,
+    DOM_FUNC_SELECT_GT          = 0x57,
+    DOM_FUNC_SELECT_GE          = 0x58,
 } func_id_t;
 
 
@@ -131,6 +137,12 @@ static const char* dom_func_enum_to_str(const uint8_t err)
         case DOM_FUNC_CONV_MANY:        return "dom_conv_many";
         case DOM_FUNC_CONV_BTOA:        return "dom_conv_btoa";
         case DOM_FUNC_CONV_ATOB:        return "dom_conv_atob";
+        case DOM_FUNC_CONV_TYPE_2TO1:   return "dom_conv_type_2to1";
+        case DOM_FUNC_CONV_TYPE_1TO2:   return "dom_conv_type_1to2";
+        case DOM_FUNC_CONV_TYPE_4TO1:   return "dom_conv_type_4to1";
+        case DOM_FUNC_CONV_TYPE_1TO4:   return "dom_conv_type_1to4";
+        case DOM_FUNC_CONV_TYPE_8TO1:   return "dom_conv_type_8to1";
+        case DOM_FUNC_CONV_TYPE_1TO8:   return "dom_conv_type_1to8";
 
         // Group 0x3: Boolean math
         case DOM_FUNC_KSA_CARRY:        return "dom_ksa_carry";

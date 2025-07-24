@@ -15,10 +15,11 @@
 #include "internal/dom_internal_defs.h"
 
 
-#ifndef DOM_TYPE_CONV_2TO1
-#define DOM_CONV_TYPE_2TO1(BLL, BLS)                                            \
+#ifndef DOM_TYPE_CONV_2TO1_1TO2
+#define DOM_TYPE_CONV_2TO1_1TO2(BLL, BLS)                                       \
                                                                                 \
-MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       \
+/* dom_conv_type_2to1 */                                                        \
+MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                          \
 {                                                                               \
     MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
@@ -37,7 +38,8 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       
 }                                                                               \
                                                                                 \
                                                                                 \
-MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        \
+/* dom_conv_type_1to2 */                                                        \
+MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                           \
 {                                                                               \
     MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(2, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
@@ -56,13 +58,14 @@ MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        
     return mvs;                                                                 \
 }                                                                               \
 
-#endif //DOM_TYPE_CONV_2TO1
+#endif //DOM_TYPE_CONV_2TO1_1TO2
 
 
-#ifndef DOM_TYPE_CONV_4TO1
-#define DOM_CONV_TYPE_4TO1(BLL, BLS)                                            \
+#ifndef DOM_TYPE_CONV_4TO1_1TO4
+#define DOM_TYPE_CONV_4TO1_1TO4(BLL, BLS)                                       \
                                                                                 \
-MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       \
+/* dom_conv_type_4to1 */                                                        \
+MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                          \
 {                                                                               \
     MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
@@ -90,7 +93,8 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       
 }                                                                               \
                                                                                 \
                                                                                 \
-MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        \
+/* dom_conv_type_1to4 */                                                        \
+MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                           \
 {                                                                               \
     MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(4, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
@@ -117,13 +121,14 @@ MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        
     return mvs;                                                                 \
 }                                                                               \
 
-#endif //DOM_TYPE_CONV_4TO1
+#endif //DOM_TYPE_CONV_4TO1_1TO4
 
 
-#ifndef DOM_TYPE_CONV_8TO1
-#define DOM_CONV_TYPE_8TO1(BLL, BLS)                                            \
+#ifndef DOM_TYPE_CONV_8TO1_1TO8
+#define DOM_TYPE_CONV_8TO1_1TO8(BLL, BLS)                                       \
                                                                                 \
-MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       \
+/* dom_conv_type_8to1 */                                                        \
+MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                          \
 {                                                                               \
     MTP(BLL) mv = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);            \
     if (!mv)                                                                    \
@@ -163,7 +168,8 @@ MTP(BLL) FN_CONV(BLS, BLL)(MTPA(BLS) mvs)                                       
 }                                                                               \
                                                                                 \
                                                                                 \
-MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        \
+/* dom_conv_type_1to8 */                                                        \
+MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                           \
 {                                                                               \
     MTPA(BLS) mvs = FN(dom_alloc_many, BLS)(8, mv->order, mv->domain);          \
     if (!mvs)                                                                   \
@@ -202,12 +208,12 @@ MTPA(BLS) FN_CONV(BLL, BLS)(MTP(BLL) mv)                                        
     return mvs;                                                                 \
 }                                                                               \
 
-#endif //DOM_TYPE_CONV_8TO1
+#endif //DOM_TYPE_CONV_8TO1_1TO8
 
 
-DOM_CONV_TYPE_2TO1(64, 32)   // 2/1 ratio
-DOM_CONV_TYPE_2TO1(32, 16)   // 2/1 ratio
-DOM_CONV_TYPE_2TO1(16, 8)    // 2/1 ratio
-DOM_CONV_TYPE_4TO1(64, 16)   // 4/1 ratio
-DOM_CONV_TYPE_4TO1(32, 8)    // 4/1 ratio
-DOM_CONV_TYPE_8TO1(64, 8)    // 8/1 ratio
+DOM_TYPE_CONV_2TO1_1TO2(64, 32)   // 2/1 ratio
+DOM_TYPE_CONV_2TO1_1TO2(32, 16)   // 2/1 ratio
+DOM_TYPE_CONV_2TO1_1TO2(16, 8)    // 2/1 ratio
+DOM_TYPE_CONV_4TO1_1TO4(64, 16)   // 4/1 ratio
+DOM_TYPE_CONV_4TO1_1TO4(32, 8)    // 4/1 ratio
+DOM_TYPE_CONV_8TO1_1TO8(64, 8)    // 8/1 ratio
