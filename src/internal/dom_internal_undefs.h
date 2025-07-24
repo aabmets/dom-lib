@@ -27,13 +27,26 @@
 #undef MTP
 #undef MTPA
 
-#undef RES_UINT
-#undef RES_MTP
-#undef RES_MTPA
-
 #undef STS
 #undef FN
 #undef CONV
 #undef FNCT
+
+#undef RES_UINT
+#undef RES_MTP
+#undef RES_MTPA
+
+#undef INIT_RES_UINT
+#undef INIT_RES_MPT
+#undef INIT_RES_MPTA
+
+#undef IF_NO_MEM_RETURN_ECODE
+#undef IF_NO_MEM_RETURN_ERES
+
+#undef IF_NULL_PTR_RETURN_ECODE
+#undef IF_NULL_PTR_RETURN_ERES
+
+#undef IF_COND_RETURN_ECODE
+#undef IF_COND_RETURN_ERES
 
 #undef THREAD_LOCAL
