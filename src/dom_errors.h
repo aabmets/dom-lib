@@ -30,8 +30,9 @@ typedef enum {
     DOM_OK = 0,
     DOM_ERROR_OUT_OF_MEMORY = ENOMEM,
     DOM_ERROR_NULL_POINTER = EFAULT,
-    DOM_ERROR_SIG_MISMATCH = EINVAL,
+    DOM_ERROR_INVALID_VALUE = EINVAL,
     DOM_ERROR_CSPRNG_FAILED = EIO,
+    DOM_ERROR_SIG_MISMATCH = 0xAA,
 } error_code_t;
 
 
@@ -41,8 +42,9 @@ static const char* dom_error_enum_to_str(const uint8_t err)
         case DOM_OK:                        return "no error";
         case DOM_ERROR_OUT_OF_MEMORY:       return "out of memory";
         case DOM_ERROR_NULL_POINTER:        return "null pointer";
-        case DOM_ERROR_SIG_MISMATCH:        return "signature mismatch";
+        case DOM_ERROR_INVALID_VALUE:       return "invalid argument";
         case DOM_ERROR_CSPRNG_FAILED:       return "csprng failed";
+        case DOM_ERROR_SIG_MISMATCH:        return "signature mismatch";
         default:                            return "unknown error";
     }
 }
@@ -186,6 +188,15 @@ static uint32_t get_dom_error_code(
         const uint16_t lineno
 ) {
     return (uint32_t)code << 24 | (uint32_t)func << 16 | (uint32_t)lineno;
+}
+
+
+static uint32_t set_dom_error_location(
+        const uint32_t error,
+        const func_id_t func,
+        const uint16_t lineno
+) {
+    return error & 0xFF000000u | (uint32_t)func << 16 | (uint32_t)lineno;
 }
 
 
