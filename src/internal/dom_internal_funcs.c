@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+#include "dom_errors.h"
+
 
 void secure_memzero(void* ptr, size_t len) {
     volatile uint8_t *p = (volatile uint8_t *)ptr;
@@ -21,17 +23,21 @@ void secure_memzero(void* ptr, size_t len) {
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
     #include <wincrypt.h>
-    int csprng_read_array(uint8_t* buffer, const uint32_t length) {
+    uint32_t csprng_read_array(uint8_t* buffer, const uint32_t length) {
         const unsigned long flags = BCRYPT_USE_SYSTEM_PREFERRED_RNG;
         const NTSTATUS rc = BCryptGenRandom(NULL, buffer, length, flags);
-        return rc == 0 ? 0 : -1;
+        if (!rc)
+            return DOM_OK;
+        return get_dom_error_code(DOM_ERROR_CSPRNG_FAILED, FUNC_CSPRNG_READ_ARRAY, 30);
     }
 #elif defined(__unix__)
     #include <fcntl.h>
     #include <unistd.h>
-    int csprng_read_array(uint8_t* buffer, const uint32_t length) {
+    uint32_t csprng_read_array(uint8_t* buffer, const uint32_t length) {
         const int fd = open("/dev/urandom", O_RDONLY);
-        const bytes = fd >= 0 ? read(fd, buffer, length) : 0;
-        return fd >= 0 && bytes == length ? 0 : -1;
+        const int bytes = fd >= 0 ? read(fd, buffer, length) : 0;
+        if (fd >= 0 && bytes == length)
+            return DOM_OK;
+        return get_dom_error_code(DOM_ERROR_CSPRNG_FAILED, FUNC_CSPRNG_READ_ARRAY, 41);
     }
 #endif

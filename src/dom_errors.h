@@ -110,6 +110,9 @@ typedef enum {
     DOM_FUNC_SELECT_LE          = 0x56,
     DOM_FUNC_SELECT_GT          = 0x57,
     DOM_FUNC_SELECT_GE          = 0x58,
+
+    // Group 0xF: Internal
+    FUNC_CSPRNG_READ_ARRAY      = 0xFA,
 } func_id_t;
 
 
