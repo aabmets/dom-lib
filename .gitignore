@@ -55,6 +55,8 @@ dkms.conf
 *.dwo
 
 # Dev
+cmake-build-default
+src/.preprocessed
 .exclude
 .idea
 .vscode
