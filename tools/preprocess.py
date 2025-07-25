@@ -197,7 +197,6 @@ def expand_macros(
         match = pattern.search(line)
         if not match:
             return line
-
         name = match.group(1)
         macro = macros.get(name)
         if macro is None:
@@ -296,12 +295,19 @@ def main():
 
     # Expand macros
     for file, contents in preprocessing_targets.items():
+        if not contents.macros:
+            continue
         sanitized_names = [re.escape(name) for name in contents.macros.keys()]
         macro_names = '|'.join(sorted(sanitized_names, key=len, reverse=True))
         pattern = re.compile(rf'\b({macro_names})\s*\(')
 
         for index, line in enumerate(contents.lines):
-            expanded = expand_macros(line, pattern, contents.macros)
+            try:
+                expanded = expand_macros(line, pattern, contents.macros)
+            except RuntimeError as e:
+                print(macro_names)
+                print(pattern)
+                raise e
             if expanded != line:
                 expanded += '\n'
             contents.lines[index] = expanded
