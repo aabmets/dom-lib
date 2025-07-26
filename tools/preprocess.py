@@ -36,10 +36,8 @@ __all__ = [
     "main",
 ]
 
-
-INCLUDE_PATTERN = re.compile(
-    r"#include\s*[\"'](?P<path>[^\"]*)[\"']"
-)
+REMOVE_LINE_PATTERN = re.compile(r"^\s*//|^\s*#ifn?def|^\s*#endif")
+INCLUDE_PATTERN = re.compile(r"#include\s*[\"'](?P<path>[^\"]*)[\"']")
 MACRO_PATTERN = re.compile(
     r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*(?P<expr>[^\n/]+)(?<!\s)"
 )
@@ -121,7 +119,7 @@ def parse_file_contents(file_path: Path) -> FileContents:
             lines.pop(index)
             continue
 
-        elif line.startswith("//"):
+        elif REMOVE_LINE_PATTERN.match(line):
             lines.pop(index)
             continue
 
