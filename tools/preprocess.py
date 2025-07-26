@@ -41,10 +41,10 @@ INCLUDE_PATTERN = re.compile(
     r"#include\s*[\"'](?P<path>[^\"]*)[\"']"
 )
 MACRO_PATTERN = re.compile(
-    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*(?P<expr>[^/\\]+)(?<!\s)"
+    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*(?P<expr>[^\n/]+)(?<!\s)"
 )
 MACRO_PATTERN_MULTILINE = re.compile(
-    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*\n(?P<expr>[^/\\]+)(?<!\s)"
+    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*\\?\n?(?P<expr>[\s\w\W]+)(?<!\s)"
 )
 
 
