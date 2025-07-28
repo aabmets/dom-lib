@@ -12,7 +12,6 @@
 import re
 import sys
 import argparse
-import textwrap
 import functools
 import typing as t
 from pathlib import Path
@@ -95,7 +94,6 @@ def extract_macro_definition(lines: list[str], index: int) -> Macro | None:
     name = match.group('name')
     args = match.group('args')
     expr = match.group('expr')
-    expr = textwrap.dedent(expr)
 
     if not any([name, args, expr]):
         raise RuntimeError(f"Could not parse macro definition:\n{line}")
@@ -219,19 +217,21 @@ def expand_macros(
 
 def parse_args() -> CmdArgs:
     src_dir = search_upwards("src")
+    default_output_dir = src_dir / ".preprocessed"
 
-    def process_path(path_str: str, must_be_dir: bool = False) -> Path:
+    def process_path(path_str: str | Path, is_output_path: bool = False) -> Path:
         path = Path(path_str)
         if not path.is_absolute():
             path = (src_dir / path)
         path = path.resolve()
-        if not path.exists():
-            raise RuntimeError(f"Cannot locate path: '{path}'")
-        elif path.is_file():
-            if must_be_dir:
+        if is_output_path:
+            if path.is_file():
                 raise RuntimeError(f"Path is not a directory: '{path}'")
-            elif path.suffix not in ['.c', '.h']:
-                raise RuntimeError(f"Cannot process file: '{path}'")
+            path.mkdir(parents=True, exist_ok=True)
+        elif not path.exists():
+            raise RuntimeError(f"Cannot locate path: '{path}'")
+        elif path.is_file() and path.suffix not in ['.c', '.h']:
+            raise RuntimeError(f"Cannot process file: '{path}'")
         return path
 
     parser = argparse.ArgumentParser()
@@ -246,8 +246,8 @@ def parse_args() -> CmdArgs:
     parser.add_argument(
         '-o', "--output-dir",
         required=False,
-        default=src_dir / ".preprocessed",
-        type=process_path,
+        default=default_output_dir,
+        type=lambda path: process_path(path, True),
         help="Path to the output directory of the processed files. "
              "If not specified, the files will be written to the "
              "'src/.preprocessed' directory."
