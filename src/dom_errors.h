@@ -179,31 +179,34 @@ static const char* dom_func_enum_to_str(const uint8_t err)
         case DOM_FUNC_SELECT_GT:        return "dom_select_gt";
         case DOM_FUNC_SELECT_GE:        return "dom_select_ge";
 
+        // Group 0xF: Internal
+        case FUNC_CSPRNG_READ_ARRAY:    return "csprng_read_array";
+
         // Fallback
         default:                        return "unknown function";
     }
 }
 
 
-static uint32_t get_dom_error_code(
+static ECODE get_dom_error_code(
         const error_code_t code,
         const func_id_t func,
         const uint16_t lineno
 ) {
-    return (uint32_t)code << 24 | (uint32_t)func << 16 | (uint32_t)lineno;
+    return (ECODE)code << 24 | (ECODE)func << 16 | (ECODE)lineno;
 }
 
 
-static uint32_t set_dom_error_location(
-        const uint32_t error,
+static ECODE set_dom_error_location(
+        const ECODE error,
         const func_id_t func,
         const uint16_t lineno
 ) {
-    return error & 0xFF000000u | (uint32_t)func << 16 | (uint32_t)lineno;
+    return error & 0xFF000000u | (ECODE)func << 16 | (ECODE)lineno;
 }
 
 
-static char* get_dom_error_message(const uint32_t error)
+static char* get_dom_error_message(const ECODE error)
 {
     if (error == DOM_OK) {
         snprintf(error_message, sizeof(error_message), "No error");
