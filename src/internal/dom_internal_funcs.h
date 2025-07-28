@@ -12,11 +12,11 @@
 #ifndef DOM_INTERNAL_FUNCS_H
 #define DOM_INTERNAL_FUNCS_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
-#include <cstdint>
 extern "C" {
 #else
-#include <stdint.h>
 #endif
 
 
@@ -28,7 +28,7 @@ extern "C" {
     #endif
 
     void secure_memzero(void* ptr, size_t len);
-    int csprng_read_array(uint8_t* buffer, uint32_t length);
+    ECODE csprng_read_array(uint8_t* buffer, uint32_t length);
 
 
 #ifdef __cplusplus
