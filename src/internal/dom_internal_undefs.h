@@ -21,6 +21,7 @@
 #undef STR
 #undef XSTR
 
+#undef BL_ENUM
 #undef TYPE
 #undef UINT
 #undef MT
@@ -32,9 +33,14 @@
 #undef CONV
 #undef FNCT
 
+#undef ECODE
 #undef RES_UINT
 #undef RES_MTP
 #undef RES_MTPA
+
+#undef SOV
+#undef VAR
+#undef ALIGN
 
 #undef INIT_RES_UINT
 #undef INIT_RES_MPT
@@ -48,5 +54,14 @@
 
 #undef IF_COND_RETURN_ECODE
 #undef IF_COND_RETURN_ERES
+
+#undef IF_ECODE_UPDATE_RETURN
+#undef IF_ERES_UPDATE_RETURN
+
+#undef VALIDATE_DOM_ORDER
+#undef VALIDATE_DOM_DOMAIN
+
+#undef COMPUTE_MTP_ALLOC_SIZE
+#undef COMPUTE_ARR_ALLOC_SIZE
 
 #undef THREAD_LOCAL
