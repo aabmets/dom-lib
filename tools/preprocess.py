@@ -11,6 +11,7 @@
 
 import re
 import sys
+import textwrap
 import argparse
 import functools
 import typing as t
@@ -38,10 +39,10 @@ __all__ = [
 REMOVE_LINE_PATTERN = re.compile(r"^\s*//|^\s*#ifn?def|^\s*#endif")
 INCLUDE_PATTERN = re.compile(r"#include\s*[\"'](?P<path>[^\"]*)[\"']")
 MACRO_PATTERN = re.compile(
-    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*(?P<expr>[^\n/]+)(?<!\s)"
+    r"#define +(?P<name>\w+) *\((?P<args>[\w\s,]+) *\) *(?P<expr>[^\n/]+)(?<!\s)"
 )
 MACRO_PATTERN_MULTILINE = re.compile(
-    r"#define\s*(?P<name>\w+)\s*\((?P<args>[\w\s,]+)\s*\)\s*\\?\n?(?P<expr>[\s\w\W]+)(?<!\s)"
+    r"#define +(?P<name>\w+) *\((?P<args>[\w\s,]+) *\) *\\?\n?(?P<expr>[\s\S]+)(?<!\s)"
 )
 
 
@@ -55,6 +56,7 @@ class Macro:
     name: str
     args: list[str]
     expr: str
+    multiline: bool
 
 
 @dataclass
@@ -94,12 +96,13 @@ def extract_macro_definition(lines: list[str], index: int) -> Macro | None:
     name = match.group('name')
     args = match.group('args')
     expr = match.group('expr')
+    expr = textwrap.dedent(expr)
 
     if not any([name, args, expr]):
         raise RuntimeError(f"Could not parse macro definition:\n{line}")
 
     args = [x.strip() for x in args.split(',')]
-    return Macro(name, args, expr)
+    return Macro(name, args, expr, pattern == MACRO_PATTERN_MULTILINE)
 
 
 def parse_file_contents(file_path: Path) -> FileContents:
@@ -212,7 +215,15 @@ def expand_macros(
         expr = re.sub(r"\s*##\s*", "", expr)
         expr = expand_macros(expr, pattern, macros, _depth + 1)
 
-        line = line[: match.start()] + expr + line[close_idx + 1 :]
+        prev_content = line[: match.start()]
+
+        if macro.multiline:
+            trimmed_prev_content = prev_content.rstrip(' ')
+            base_indent = len(prev_content) - len(trimmed_prev_content)
+            expr = textwrap.indent(expr, ' ' * base_indent)
+            prev_content = trimmed_prev_content
+
+        line = prev_content + expr + line[close_idx + 1 :]
 
 
 def parse_args() -> CmdArgs:
