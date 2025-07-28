@@ -12,15 +12,13 @@
 #ifndef DOM_TYPES_H
 #define DOM_TYPES_H
 
+#include <limits.h>
+#include <stdint.h>
+
 #include "internal/dom_internal_defs.h"
 
 #ifdef __cplusplus
-#include <cstdint>
-#include <climits>
 extern "C" {
-#else
-#include <limits.h>
-#include <stdint.h>
 #endif
 
 
@@ -47,6 +45,22 @@ typedef struct {                    \
     uint16_t share_bytes;           \
     UINT(BL) shares[];              \
 } MT(BL);                           \
+                                    \
+typedef struct {                    \
+    UINT(BL) value;                 \
+    uint32_t error;                 \
+} RES_UINT(BL);                     \
+                                    \
+typedef struct {                    \
+    MTP(BL) mv;                     \
+    uint32_t error;                 \
+} RES_MTP(BL);                      \
+                                    \
+typedef struct {                    \
+    MTPA(BL) mvs;                   \
+    uint32_t error;                 \
+} RES_MTPA(BL);                     \
+
 
 MASKED_TYPE(8)
 MASKED_TYPE(16)
