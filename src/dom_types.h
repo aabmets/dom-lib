@@ -58,6 +58,7 @@ typedef struct {                    \
                                     \
 typedef struct {                    \
     MTPA(BL) mvs;                   \
+    uint32_t count;                 \
     uint32_t error;                 \
 } RES_MTPA(BL);                     \
 
@@ -72,6 +73,7 @@ MASKED_TYPE(64)
 }
 #endif
 
+#undef MASKED_TYPE
 #include "internal/dom_internal_undefs.h"
 
 #endif //DOM_TYPES_H
