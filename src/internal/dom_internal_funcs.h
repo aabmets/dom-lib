@@ -13,6 +13,7 @@
 #define DOM_INTERNAL_FUNCS_H
 
 #include <stdint.h>
+#include <malloc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,15 +21,23 @@ extern "C" {
 #endif
 
 
-    #if defined(_WIN32) || defined(_WIN64)
-        #define aligned_alloc(alignment, size) _aligned_malloc(size, alignment)
-        #define aligned_free(ptr) _aligned_free(ptr)
-    #else
-        #define aligned_free(ptr) free(ptr)
-    #endif
+#if defined(_WIN32) || defined(_WIN64)
+    #define aligned_alloc(alignment, size) _aligned_malloc(size, alignment)
+    #define aligned_free(ptr) _aligned_free(ptr)
+#else
+    #define aligned_free(ptr) free(ptr)
+#endif
 
-    void secure_memzero(void* ptr, size_t len);
-    ECODE csprng_read_array(uint8_t* buffer, uint32_t length);
+void    secure_memzero                      (void* ptr, size_t len);
+ECODE   csprng_read_array                   (uint8_t* buffer, uint32_t length);
+
+#define DOM_INTERNAL_FUNCS_DECL(BL)                                                     \
+void    FN(alloc_many_error_cleanup, BL)    (MTPA(BL) mvs, const uint8_t count);        \
+
+DOM_INTERNAL_FUNCS_DECL(8)
+DOM_INTERNAL_FUNCS_DECL(16)
+DOM_INTERNAL_FUNCS_DECL(32)
+DOM_INTERNAL_FUNCS_DECL(64)
 
 
 #ifdef __cplusplus

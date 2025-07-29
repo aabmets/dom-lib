@@ -11,8 +11,10 @@
 
 #include <stdint.h>
 
+#include "dom_types.h"
 #include "dom_errors.h"
 #include "dom_internal_defs.h"
+#include "dom_internal_funcs.h"
 
 
 void secure_memzero(void* ptr, size_t len) {
@@ -21,7 +23,28 @@ void secure_memzero(void* ptr, size_t len) {
 }
 
 
+#define DOM_INTERNAL_FUNCS_IMPL(BL)                                             \
+                                                                                \
+void FN(alloc_many_error_cleanup, BL)(                                          \
+        MTPA(BL) mvs,                                                           \
+        const uint8_t count                                                     \
+) {                                                                             \
+    for (uint8_t i = 0; i < count; ++i) {                                       \
+        const MTP(BL) mv = mvs[i];                                              \
+        secure_memzero((void*)mv, mv->total_bytes);                             \
+        aligned_free((void*)mv);                                                \
+    }                                                                           \
+    aligned_free(mvs);                                                          \
+}                                                                               \
+
+DOM_INTERNAL_FUNCS_IMPL(8)
+DOM_INTERNAL_FUNCS_IMPL(16)
+DOM_INTERNAL_FUNCS_IMPL(32)
+DOM_INTERNAL_FUNCS_IMPL(64)
+
+
 #if defined(_WIN32) || defined(_WIN64)
+    #undef UINT  // conflict with wincrypt.h
     #include <windows.h>
     #include <wincrypt.h>
     ECODE csprng_read_array(uint8_t* buffer, const uint32_t length)
