@@ -20,7 +20,6 @@
 #include "internal/dom_internal_funcs.h"
 
 
-#ifndef DOM_CORE_MEMORY
 #define DOM_CORE_MEMORY(TYPE, BL)                                               \
                                                                                 \
 static const size_t ALIGN(BL) =                                                 \
@@ -185,8 +184,6 @@ ECODE FN(dom_clear_many, BL)(MTPA(BL) mvs, const uint8_t count)                 
     return DOM_OK;                                                              \
 }                                                                               \
 
-
-#endif //DOM_CORE_MEMORY
 
 DOM_CORE_MEMORY(uint8_t, 8)
 DOM_CORE_MEMORY(uint16_t, 16)

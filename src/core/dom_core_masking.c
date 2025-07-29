@@ -18,7 +18,6 @@
 #include "internal/dom_internal_funcs.h"
 
 
-#ifndef DOM_CORE_MASKING
 #define DOM_CORE_MASKING(TYPE, BL)                                              \
                                                                                 \
 RES_MTP(BL) FN(dom_mask, BL)(                                                   \
@@ -168,7 +167,6 @@ ECODE FN(dom_refresh_many, BL)(MTPA(BL) mvs, uint8_t count)                     
     return DOM_OK;                                                              \
 }                                                                               \
 
-#endif //DOM_CORE_MASKING
 
 DOM_CORE_MASKING(uint8_t, 8)
 DOM_CORE_MASKING(uint16_t, 16)
