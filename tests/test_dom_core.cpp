@@ -25,9 +25,6 @@ struct dom_traits;
 #define DEFINE_DOM_TRAITS(BL)                                                                                           \
 template<>                                                                                                              \
 struct dom_traits<UINT(BL)> {                                                                                           \
-    using rmtp = RES_MTP(BL);                                                                                           \
-    using rmtpa = RES_MTPA(BL);                                                                                         \
-                                                                                                                        \
     static RES_MTP(BL)      dom_alloc           (uint8_t order, domain_t domain)                                        \
                                                 { return FN(dom_alloc, BL)(order, domain); }                            \
                                                                                                                         \

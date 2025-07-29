@@ -24,30 +24,24 @@ struct dom_traits;
 #define DEFINE_DOM_TRAITS(BLL, BLS)                                                                                     \
 template<>                                                                                                              \
 struct dom_traits<UINT(BLL), UINT(BLS)> {                                                                               \
-    using large_mtp = MTP(BLL);                                                                                         \
-    using large_mtpa = MTPA(BLL);                                                                                       \
-    using large_uint = UINT(BLL);                                                                                       \
-                                                                                                                        \
     using small_mtp = MTP(BLS);                                                                                         \
-    using small_mtpa = MTPA(BLS);                                                                                       \
-    using small_uint = UINT(BLS);                                                                                       \
                                                                                                                         \
-    static small_mtp     mask_small         (small_uint v, uint8_t o, domain_t d)                                       \
-                                            { return FN(dom_mask, BLS)(v, o, d); }                                      \
+    static RES_MTP(BLS)     mask_small          (UINT(BLS) value, uint8_t order, domain_t domain)                        \
+                                                { return FN(dom_mask, BLS)(value, order, domain); }                     \
                                                                                                                         \
-    static small_uint    unmask_small       (small_mtp mv, small_uint* o, uint8_t i)                                    \
-                                            { return FN(dom_unmask, BLS)(mv, o, i); }                                   \
+    static ECODE            unmask_small        (MTP(BLS) mv, UINT(BLS)* out, uint8_t index)                             \
+                                                { return FN(dom_unmask, BLS)(mv, out, index); }                         \
                                                                                                                         \
-    static large_uint    unmask_large       (large_mtp mv, large_uint* o, uint8_t i)                                    \
-                                            { return FN(dom_unmask, BLL)(mv, o, i); }                                   \
+    static ECODE            unmask_large        (MTP(BLL) mv, UINT(BLL)* out, uint8_t index)                             \
+                                                { return FN(dom_unmask, BLL)(mv, out, index); }                         \
                                                                                                                         \
-    static void          free_small_many    (small_mtpa mvs, uint8_t c, bool fa)                                        \
-                                            { FN(dom_free_many, BLS)(mvs, c, fa); }                                     \
+    static ECODE            free_small_many     (MTPA(BLS) mvs, uint8_t count, bool free_array)                         \
+                                                { return FN(dom_free_many, BLS)(mvs, count, free_array); }              \
                                                                                                                         \
-    static void          free_small         (small_mtp mv)        { FN(dom_free, BLS)(mv); }                            \
-    static void          free_large         (large_mtp mv)        { FN(dom_free, BLL)(mv); }                            \
-    static large_mtp     to_large           (small_mtpa parts)    { return FNCT(BLS, BLL)(parts); }                     \
-    static small_mtpa    to_small           (large_mtp mv)        { return FNCT(BLL, BLS)(mv); }                        \
+    static ECODE            free_small          (MTP(BLS) mv)           { return FN(dom_free, BLS)(mv); }               \
+    static ECODE            free_large          (MTP(BLL) mv)           { return FN(dom_free, BLL)(mv); }               \
+    static RES_MTP(BLL)     to_large            (MTPA(BLS) parts)       { return FNCT(BLS, BLL)(parts); }               \
+    static RES_MTPA(BLS)    to_small            (MTP(BLL) mv)           { return FNCT(BLL, BLS)(mv); }                  \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(64, 32)   // 2/1 ratio
@@ -76,31 +70,37 @@ static void roundtrip(uint8_t order)
 
     std::array<typename traits::small_mtp, PARTS> parts{};
     for (size_t i = 0; i < PARTS; ++i) {
-        parts[i] = traits::mask_small(chunks[i], order, DOMAIN_BOOLEAN);
-        REQUIRE(parts[i] != nullptr);
+        auto part = traits::mask_small(chunks[i], order, DOMAIN_BOOLEAN);
+        REQUIRE(part.error == DOM_OK);
+        REQUIRE(part.mv != nullptr);
+        parts[i] = part.mv;
     }
 
-    auto* mv_large = traits::to_large(parts.data());
-    REQUIRE(mv_large != nullptr);
+    auto mv_large = traits::to_large(parts.data());
+    REQUIRE(mv_large.error == DOM_OK);
+    REQUIRE(mv_large.mv != nullptr);
 
     L unmasked_large[1];
-    REQUIRE(traits::unmask_large(mv_large, unmasked_large, 0) == 0);
+    REQUIRE(traits::unmask_large(mv_large.mv, unmasked_large, 0) == DOM_OK);
     REQUIRE(unmasked_large[0] == original);
 
-    auto** back = traits::to_small(mv_large);
-    REQUIRE(back != nullptr);
+    auto back = traits::to_small(mv_large.mv);
+    REQUIRE(back.error == DOM_OK);
+    REQUIRE(back.mvs != nullptr);
 
     S unmasked_small[1];
     for (size_t i = 0; i < PARTS; ++i) {
-        REQUIRE(back[i] != nullptr);
-        REQUIRE(traits::unmask_small(back[i], unmasked_small, 0) == 0);
+        auto* mv = back.mvs[i];
+        REQUIRE(mv != nullptr);
+        REQUIRE(traits::unmask_small(mv, unmasked_small, 0) == DOM_OK);
         REQUIRE(unmasked_small[0] == chunks[i]);
     }
 
-    for (auto* mv : parts)
+    for (auto* mv : parts){
         traits::free_small(mv);
-    traits::free_large(mv_large);
-    traits::free_small_many(back, static_cast<uint8_t>(PARTS), true);
+    }
+    traits::free_large(mv_large.mv);
+    traits::free_small_many(back.mvs, static_cast<uint8_t>(PARTS), true);
 }
 
 
