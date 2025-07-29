@@ -15,6 +15,8 @@
 #include <cstddef>
 #include <array>
 
+#include "dom_types.h"
+#include "dom_errors.h"
 #include "internal/dom_internal_funcs.h"
 
 
@@ -25,10 +27,10 @@ std::vector<unsigned char> getCsprngSamples(const std::size_t numSamples) {
         constexpr std::size_t TOTAL_SAMPLES = 300000;
         samples.resize(TOTAL_SAMPLES);
 
-        csprng_read_array(
+        REQUIRE(csprng_read_array(
             samples.data(),
             static_cast<uint32_t>(samples.size())
-        );
+        ) == DOM_OK);
     }
 
     if (numSamples < samples.size()) {

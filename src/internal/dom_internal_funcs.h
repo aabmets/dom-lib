@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include <malloc.h>
 
+#include "internal/dom_internal_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #else
