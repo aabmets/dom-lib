@@ -241,7 +241,7 @@ def parse_args() -> CmdArgs:
             path.mkdir(parents=True, exist_ok=True)
         elif not path.exists():
             raise RuntimeError(f"Cannot locate path: '{path}'")
-        elif path.is_file() and path.suffix not in ['.c', '.h']:
+        elif path.is_file() and path.suffix not in ['.c', '.h', '.cpp', '.hpp']:
             raise RuntimeError(f"Cannot process file: '{path}'")
         return path
 
@@ -269,6 +269,9 @@ def parse_args() -> CmdArgs:
 def main():
     args = parse_args()
     src_dir = search_upwards("src")
+    if not args.process_path.is_relative_to(src_dir):
+        return
+
     preprocessing_targets: dict[Path, FileContents] = {}
     imported_dependencies: dict[Path, FileContents] = {}
 
