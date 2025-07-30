@@ -27,12 +27,12 @@ static THREAD_LOCAL char error_message[ERR_MSG_LENGTH];
 
 
 typedef enum {
-    DOM_OK = 0,
-    DOM_ERROR_OUT_OF_MEMORY = ENOMEM,
-    DOM_ERROR_NULL_POINTER = EFAULT,
-    DOM_ERROR_INVALID_VALUE = EINVAL,
-    DOM_ERROR_CSPRNG_FAILED = EIO,
-    DOM_ERROR_SIG_MISMATCH = 0xAA,
+    DOM_OK                      = 0x0,
+    DOM_ERROR_OUT_OF_MEMORY     = ENOMEM,
+    DOM_ERROR_NULL_POINTER      = EFAULT,
+    DOM_ERROR_INVALID_VALUE     = EINVAL,
+    DOM_ERROR_CSPRNG_FAILED     = EIO,
+    DOM_ERROR_SIG_MISMATCH      = 0xAA,
 } error_code_t;
 
 
@@ -188,21 +188,32 @@ static const char* dom_func_enum_to_str(const uint8_t err)
 }
 
 
+/*
+ *  ║ Byte 1  ║ Byte 2  ║ Byte 3  ║ Byte 4  ║
+ *  ╠═════════╬═════════╬═════════╬═════════╣
+ *   0000 0000 0000 0000 0000 0000 0000 0000
+ *  ├─────────┼─────────┼───────────────────┤
+ *  │ A       │ B       │ C                 │
+ *
+ *    A) 1 byte  - Error reason (error_code_t)
+ *    B) 1 byte  - Function ID where error occurred (unique across files)
+ *    C) 2 bytes - Source code line ID (unique for a file, but not across files)
+ */
 static ECODE get_dom_error_code(
         const error_code_t code,
         const func_id_t func,
-        const uint16_t lineno
+        const uint16_t line_id
 ) {
-    return (ECODE)code << 24 | (ECODE)func << 16 | (ECODE)lineno;
+    return (ECODE)code << 24 | (ECODE)func << 16 | (ECODE)line_id;
 }
 
 
 static ECODE set_dom_error_location(
         const ECODE error,
         const func_id_t func,
-        const uint16_t lineno
+        const uint16_t line_id
 ) {
-    return error & 0xFF000000u | (ECODE)func << 16 | (ECODE)lineno;
+    return error & 0xFF000000u | (ECODE)func << 16 | (ECODE)line_id;
 }
 
 
@@ -214,20 +225,20 @@ static char* get_dom_error_message(const ECODE error)
     }
     const uint8_t code = (uint8_t)(error >> 24);
     const uint8_t func = (uint8_t)(error >> 16);
-    const uint16_t lineno = (uint16_t)error;
+    const uint16_t line_id = (uint16_t)error;
 
     const char* code_str = dom_error_enum_to_str(code);
     const char* func_str = dom_func_enum_to_str(func);
 
     if (func_str == "unknown function") {
         snprintf(error_message, sizeof(error_message),
-            "DOM error: %s (code 0x%02X) in %s (id 0x%02X) at line %u",
-            code_str, code, func_str, func, lineno
+            "DOM error: %s (code 0x%02X) in %s (id 0x%02X) at line id 0x%04X",
+            code_str, code, func_str, func, line_id
         );
     } else {
         snprintf(error_message, sizeof(error_message),
-            "DOM error: %s (code 0x%02X) in function %s (id 0x%02X) at line %u",
-            code_str, code, func_str, func, lineno
+            "DOM error: %s (code 0x%02X) in function %s (id 0x%02X) at line id 0x%04X",
+            code_str, code, func_str, func, line_id
         );
     }
     return error_message;
