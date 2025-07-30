@@ -26,7 +26,7 @@ RES_MTP(BL) FN(dom_mask, BL)(                                                   
         const domain_t domain                                                   \
 ) {                                                                             \
     RES_MTP(BL) res = FN(dom_alloc, BL)(order, domain);                         \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_MASK, 32)                               \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_MASK, 0xAA00)                           \
                                                                                 \
     TYPE* shares = res.mv->shares;                                              \
     const uint8_t share_count = res.mv->share_count;                            \
@@ -35,7 +35,7 @@ RES_MTP(BL) FN(dom_mask, BL)(                                                   
     const ECODE ecode = csprng_read_array((uint8_t*)&shares[1], order_bytes);   \
     if (ecode) {                                                                \
         FN(dom_free, BL)(res.mv);                                               \
-        res.error = set_dom_error_location(ecode, DOM_FUNC_MASK, 41);           \
+        res.error = set_dom_error_location(ecode, DOM_FUNC_MASK, 0xAA11);       \
         return res;                                                             \
     }                                                                           \
     TYPE masked = value;                                                        \
@@ -60,22 +60,22 @@ RES_MTPA(BL) FN(dom_mask_many, BL)(                                             
         const domain_t domain                                                   \
 ) {                                                                             \
     INIT_RES_MTPA(BL)                                                           \
-    IF_NULL_PTR_RETURN_ERES(values, DOM_FUNC_MASK_MANY, 66)                     \
-    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_MASK_MANY, 67)                      \
+    IF_NULL_PTR_RETURN_ERES(values, DOM_FUNC_MASK_MANY, 0xAA22)                 \
+    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_MASK_MANY, 0xAA33)                  \
                                                                                 \
     MTPA(BL) mvs;                                                               \
     size_t array_bytes = count * sizeof(*mvs);                                  \
     array_bytes = COMPUTE_ARR_ALLOC_SIZE(array_bytes);                          \
                                                                                 \
     mvs = aligned_alloc(SOV, array_bytes);                                      \
-    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_MASK_MANY, 74)                          \
+    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_MASK_MANY, 0xAA44)                      \
                                                                                 \
     for (uint32_t i = 0; i < count; ++i) {                                      \
         const RES_MTP(BL) mtp = FN(dom_mask, BL)(values[i], order, domain);     \
         if (mtp.error) {                                                        \
             FN(alloc_many_error_cleanup, BL)(mvs, i);                           \
             res.error = set_dom_error_location(                                 \
-                mtp.error, DOM_FUNC_MASK_MANY, 81                               \
+                mtp.error, DOM_FUNC_MASK_MANY, 0xAA55                           \
             );                                                                  \
             return res;                                                         \
         }                                                                       \
@@ -89,10 +89,10 @@ RES_MTPA(BL) FN(dom_mask_many, BL)(                                             
                                                                                 \
 ECODE FN(dom_unmask, BL)(MTP(BL) mv, TYPE* out, const uint8_t index)            \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_UNMASK, 95)                           \
-    IF_NULL_PTR_RETURN_ECODE(out, DOM_FUNC_UNMASK, 96)                          \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_UNMASK, 0xAA66)                       \
+    IF_NULL_PTR_RETURN_ECODE(out, DOM_FUNC_UNMASK, 0xAA77)                      \
                                                                                 \
-    TYPE* shares = mv->shares;                                                  \
+    const TYPE* shares = mv->shares;                                            \
     TYPE result = shares[0];                                                    \
     if (mv->domain == DOMAIN_BOOLEAN) {  /* XOR unmasking */                    \
         for (uint8_t i = 1; i < mv->share_count; ++i) {                         \
@@ -110,15 +110,14 @@ ECODE FN(dom_unmask, BL)(MTP(BL) mv, TYPE* out, const uint8_t index)            
                                                                                 \
 ECODE FN(dom_unmask_many, BL)(MTPA(BL) mvs, TYPE* out, const uint8_t count)     \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_UNMASK_MANY, 116)                    \
-    IF_NULL_PTR_RETURN_ECODE(out, DOM_FUNC_UNMASK_MANY, 117)                    \
-    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_UNMASK_MANY, 118)                  \
+    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_UNMASK_MANY, 0xAA88)                 \
+    IF_NULL_PTR_RETURN_ECODE(out, DOM_FUNC_UNMASK_MANY, 0xAA99)                 \
+    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_UNMASK_MANY, 0xBB00)               \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         MTP(BL) mv = mvs[i];                                                    \
         const ECODE ecode = FN(dom_unmask, BL)(mv, out, i);                     \
-        if (ecode)                                                              \
-            return ecode;                                                       \
+        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_UNMASK_MANY, 0xBB11)             \
     }                                                                           \
     return DOM_OK;                                                              \
 }                                                                               \
@@ -126,14 +125,13 @@ ECODE FN(dom_unmask_many, BL)(MTPA(BL) mvs, TYPE* out, const uint8_t count)     
                                                                                 \
 ECODE FN(dom_refresh, BL)(MTP(BL) mv)                                           \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_REFRESH, 130)                         \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_REFRESH, 0xBB22)                      \
                                                                                 \
     TYPE rnd[mv->order];                                                        \
-    uint8_t order_bytes = mv->order * sizeof(TYPE);                             \
+    const uint8_t order_bytes = mv->order * sizeof(TYPE);                       \
                                                                                 \
-    ECODE ecode = csprng_read_array((uint8_t*)rnd, order_bytes);                \
-    if (ecode)                                                                  \
-        return ecode;                                                           \
+    const ECODE ecode = csprng_read_array((uint8_t*)rnd, order_bytes);          \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_REFRESH, 0xBB33)                     \
                                                                                 \
     TYPE* shares = mv->shares;                                                  \
     if (mv->domain == DOMAIN_BOOLEAN) {                                         \
@@ -156,13 +154,12 @@ ECODE FN(dom_refresh, BL)(MTP(BL) mv)                                           
                                                                                 \
 ECODE FN(dom_refresh_many, BL)(MTPA(BL) mvs, uint8_t count)                     \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_REFRESH_MANY, 160)                   \
-    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_REFRESH_MANY, 161)                 \
+    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_REFRESH_MANY, 0xBB44)                \
+    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_REFRESH_MANY, 0xBB55)              \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         const ECODE ecode = FN(dom_refresh, BL)(mvs[i]);                        \
-        if (ecode)                                                              \
-            return ecode;                                                       \
+        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_REFRESH_MANY, 0xBB66)            \
     }                                                                           \
     return DOM_OK;                                                              \
 }                                                                               \

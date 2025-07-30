@@ -29,8 +29,11 @@ static const size_t ALIGN(BL) =                                                 
 RES_MTP(BL) FN(dom_alloc, BL)(const uint8_t order, const domain_t domain)       \
 {                                                                               \
     INIT_RES_MTP(BL)                                                            \
-    VALIDATE_DOM_ORDER(DOM_FUNC_ALLOC, 33)                                      \
-    VALIDATE_DOM_DOMAIN(DOM_FUNC_ALLOC, 34)                                     \
+                                                                                \
+    IF_COND_RETURN_ERES                                                         \
+        ((unsigned)order > MAX_SEC_ORDER, DOM_FUNC_ALLOC, 0xAA00)               \
+    IF_COND_RETURN_ERES                                                         \
+        ((unsigned)domain > DOMAIN_ARITHMETIC, DOM_FUNC_ALLOC, 0xAA11)          \
                                                                                 \
     const uint8_t share_count = order + 1;                                      \
     const uint16_t share_bytes = share_count * sizeof(TYPE);                    \
@@ -38,7 +41,7 @@ RES_MTP(BL) FN(dom_alloc, BL)(const uint8_t order, const domain_t domain)       
     total_bytes = COMPUTE_MTP_ALLOC_SIZE(total_bytes, BL);                      \
                                                                                 \
     MTP(BL) mv = aligned_alloc(ALIGN(BL), total_bytes);                         \
-    IF_NO_MEM_RETURN_ERES(mv, DOM_FUNC_ALLOC, 42)                               \
+    IF_NO_MEM_RETURN_ERES(mv, DOM_FUNC_ALLOC, 0xAA22)                           \
                                                                                 \
     mv->bit_length = BL_ENUM(BL);                                               \
     mv->total_bytes = total_bytes;                                              \
@@ -60,21 +63,21 @@ RES_MTPA(BL) FN(dom_alloc_many, BL)(                                            
         const domain_t domain                                                   \
 ) {                                                                             \
     INIT_RES_MTPA(BL)                                                           \
-    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_ALLOC_MANY, 64)                     \
+    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_ALLOC_MANY, 0xAA33)                 \
                                                                                 \
     MTPA(BL) mvs;                                                               \
     size_t array_bytes = count * sizeof(*mvs);                                  \
     array_bytes = COMPUTE_ARR_ALLOC_SIZE(array_bytes);                          \
                                                                                 \
     mvs = aligned_alloc(SOV, array_bytes);                                      \
-    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_ALLOC_MANY, 71)                         \
+    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_ALLOC_MANY, 0xAA44)                     \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         const RES_MTP(BL) mtp = FN(dom_alloc, BL)(order, domain);               \
         if (mtp.error) {                                                        \
             FN(alloc_many_error_cleanup, BL)(mvs, i);                           \
             res.error = set_dom_error_location(                                 \
-                mtp.error, DOM_FUNC_ALLOC_MANY, 78                              \
+                mtp.error, DOM_FUNC_ALLOC_MANY, 0xAA55                          \
             );                                                                  \
             return res;                                                         \
         }                                                                       \
@@ -89,10 +92,10 @@ RES_MTPA(BL) FN(dom_alloc_many, BL)(                                            
 RES_MTP(BL) FN(dom_clone, BL)(MTP(BL) mv, const bool clear_shares)              \
 {                                                                               \
     INIT_RES_MTP(BL)                                                            \
-    IF_NULL_PTR_RETURN_ERES(mv, DOM_FUNC_CLONE, 93)                             \
+    IF_NULL_PTR_RETURN_ERES(mv, DOM_FUNC_CLONE, 0xAA66)                         \
                                                                                 \
     MTP(BL) clone = aligned_alloc(ALIGN(BL), mv->total_bytes);                  \
-    IF_NO_MEM_RETURN_ERES(clone, DOM_FUNC_CLONE, 96)                            \
+    IF_NO_MEM_RETURN_ERES(clone, DOM_FUNC_CLONE, 0xAA77)                        \
                                                                                 \
     memcpy(clone, mv, mv->total_bytes);                                         \
     if (clear_shares)                                                           \
@@ -108,22 +111,22 @@ RES_MTPA(BL) FN(dom_clone_many, BL)(                                            
         const bool clear_shares                                                 \
 ) {                                                                             \
     INIT_RES_MTPA(BL)                                                           \
-    IF_NULL_PTR_RETURN_ERES(mv, DOM_FUNC_CLONE_MANY, 112)                       \
-    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_CLONE_MANY, 113)                    \
+    IF_NULL_PTR_RETURN_ERES(mv, DOM_FUNC_CLONE_MANY, 0xAA88)                    \
+    IF_COND_RETURN_ERES(count < 1, DOM_FUNC_CLONE_MANY, 0xAA99)                 \
                                                                                 \
     MTPA(BL) mvs;                                                               \
     size_t array_bytes = count * sizeof(*mvs);                                  \
     array_bytes = COMPUTE_ARR_ALLOC_SIZE(array_bytes);                          \
                                                                                 \
     mvs = aligned_alloc(SOV, array_bytes);                                      \
-    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_CLONE_MANY, 120)                        \
+    IF_NO_MEM_RETURN_ERES(mvs, DOM_FUNC_CLONE_MANY, 0xBB00)                     \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         const RES_MTP(BL) mtp = FN(dom_clone, BL)(mv, clear_shares);            \
         if (mtp.error) {                                                        \
             FN(alloc_many_error_cleanup, BL)(mvs, i);                           \
             res.error = set_dom_error_location(                                 \
-                mtp.error, DOM_FUNC_CLONE_MANY, 127                             \
+                mtp.error, DOM_FUNC_CLONE_MANY, 0xBB11                          \
             );                                                                  \
             return res;                                                         \
         }                                                                       \
@@ -137,7 +140,7 @@ RES_MTPA(BL) FN(dom_clone_many, BL)(                                            
                                                                                 \
 ECODE FN(dom_free, BL)(MTP(BL) mv)                                              \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_FREE, 141)                            \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_FREE, 0xBB22)                         \
                                                                                 \
     secure_memzero((void*)mv, mv->total_bytes);                                 \
     aligned_free((void*)mv);                                                    \
@@ -150,12 +153,12 @@ ECODE FN(dom_free_many, BL)(                                                    
         const uint8_t count,                                                    \
         const bool free_array                                                   \
 ) {                                                                             \
-    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_FREE_MANY, 154)                      \
-    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_FREE_MANY, 155)                    \
+    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_FREE_MANY, 0xBB33)                   \
+    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_FREE_MANY, 0xBB44)                 \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         const ECODE ecode = FN(dom_free, BL)(mvs[i]);                           \
-        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_FREE_MANY, 159)                  \
+        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_FREE_MANY, 0xBB55)               \
     }                                                                           \
     if (free_array)                                                             \
         aligned_free(mvs);                                                      \
@@ -165,7 +168,7 @@ ECODE FN(dom_free_many, BL)(                                                    
                                                                                 \
 ECODE FN(dom_clear, BL)(MTP(BL) mv)                                             \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_CLEAR, 169)                           \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_CLEAR, 0xBB66)                        \
                                                                                 \
     secure_memzero(mv->shares, mv->share_bytes);                                \
     return DOM_OK;                                                              \
@@ -174,12 +177,12 @@ ECODE FN(dom_clear, BL)(MTP(BL) mv)                                             
                                                                                 \
 ECODE FN(dom_clear_many, BL)(MTPA(BL) mvs, const uint8_t count)                 \
 {                                                                               \
-    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_CLEAR_MANY, 178)                     \
-    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_CLEAR_MANY, 179)                   \
+    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_CLEAR_MANY, 0xBB77)                  \
+    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_CLEAR_MANY, 0xBB88)                \
                                                                                 \
     for (uint8_t i = 0; i < count; ++i) {                                       \
         const ECODE ecode = FN(dom_clear, BL)(mvs[i]);                          \
-        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CLEAR_MANY, 183)                 \
+        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CLEAR_MANY, 0xBB99)              \
     }                                                                           \
     return DOM_OK;                                                              \
 }                                                                               \
