@@ -36,15 +36,15 @@
 #define FNCT(BL1, BL2)      XGLUE(dom_conv, CONV(BL1, BL2))     // type conversion function name
 
 #define ECODE               uint32_t                            // error code type
-#define RES_UINT(BL)        XGLUE(result_, UINT(BL))            // result struct for UINT(BL)
+#define RES_VAP(BL)         XGLUE(result_, TYPE(vap, BL))       // result struct for a pointer to a value array
 #define RES_MTP(BL)         XGLUE(result_, TYPE(mtp, BL))       // result struct for MTP(BL)
 #define RES_MTPA(BL)        XGLUE(result_, TYPE(mtpa, BL))      // result struct for MTPA(BL)
 
-#define SOV                 sizeof(void *)                      // size of void pointer
+#define SOV                 sizeof(void *)                      // size of a void pointer
 #define VAR(NAME, BL)       NAME##_##BL                         // typed variable name
 #define ALIGN(BL)           VAR(ALIGNMENT, BL)                  // alignment variable name
 
-#define INIT_RES_UINT(BL)   RES_UINT(BL) res = { .error = DOM_OK, .value = 0 };
+#define INIT_RES_VAP(BL)    RES_VAP(BL) res = { .error = DOM_OK, .vls = NULL };
 #define INIT_RES_MTP(BL)    RES_MTP(BL) res = { .error = DOM_OK, .mv = NULL };
 #define INIT_RES_MTPA(BL)   RES_MTPA(BL) res = { .error = DOM_OK, .mvs = NULL };
 
@@ -73,35 +73,41 @@
     }                                                                                                                   \
 
 // ---------------------------------------------------------------------------------------------------------------------
-#define IF_COND_RETURN_ECODE(cond, func, lineno)                                                                        \
-    if (cond) {                                                                                                         \
+#define IF_COND_RETURN_ECODE(condition, func, lineno)                                                                   \
+    if (condition) {                                                                                                    \
         return get_dom_error_code(DOM_ERROR_INVALID_VALUE, func, lineno);                                               \
     }                                                                                                                   \
 
-#define IF_COND_RETURN_ERES(cond, func, lineno)                                                                         \
-    if (cond) {                                                                                                         \
+#define IF_COND_RETURN_ERES(condition, func, lineno)                                                                    \
+    if (condition) {                                                                                                    \
         res.error = get_dom_error_code(DOM_ERROR_INVALID_VALUE, func, lineno);                                          \
         return res;                                                                                                     \
     }                                                                                                                   \
 
 // ---------------------------------------------------------------------------------------------------------------------
-#define IF_ECODE_UPDATE_RETURN(ecode, func, lineno)                                                                     \
-    if (ecode) {                                                                                                        \
-        return set_dom_error_location(ecode, func, lineno);                                                             \
+#define IF_ECODE_UPDATE_RETURN(error_code, func, lineno)                                                                \
+    if (error_code) {                                                                                                   \
+        return set_dom_error_location(error_code, func, lineno);                                                        \
     }                                                                                                                   \
 
-#define IF_ERES_UPDATE_RETURN(eres, func, lineno)                                                                       \
-    if (eres.error) {                                                                                                   \
-        res.error = set_dom_error_location(eres.error, func, lineno);                                                   \
+#define IF_ERES_UPDATE_RETURN(result_struct, func, lineno)                                                              \
+    if (result_struct.error) {                                                                                          \
+        res.error = set_dom_error_location(result_struct.error, func, lineno);                                          \
         return res;                                                                                                     \
     }                                                                                                                   \
 
 // ---------------------------------------------------------------------------------------------------------------------
-#define VALIDATE_DOM_ORDER(func, lineno)                                                                                \
-    IF_COND_RETURN_ERES((unsigned)order > MAX_SEC_ORDER, func, lineno)                                                  \
+#define IF_ECODE_GOTO_CLEANUP(error_code, func, lineno)                                                                 \
+    if (error_code) {                                                                                                   \
+        ecode = set_dom_error_location(error_code, func, lineno);                                                       \
+        goto cleanup;                                                                                                   \
+    }                                                                                                                   \
 
-#define VALIDATE_DOM_DOMAIN(func, lineno)                                                                               \
-    IF_COND_RETURN_ERES((unsigned)domain > DOMAIN_ARITHMETIC, func, lineno)                                             \
+#define IF_ERES_GOTO_CLEANUP(result_struct, func, lineno)                                                               \
+    if (result_struct.error) {                                                                                          \
+        res.error = set_dom_error_location(result_struct.error, func, lineno);                                          \
+        goto cleanup;                                                                                                   \
+    }
 
 // ---------------------------------------------------------------------------------------------------------------------
 #define COMPUTE_MTP_ALLOC_SIZE(BYTES, BL)   ((BYTES + ALIGN(BL) - 1) & ~(ALIGN(BL) - 1))

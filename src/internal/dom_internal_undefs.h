@@ -34,7 +34,7 @@
 #undef FNCT
 
 #undef ECODE
-#undef RES_UINT
+#undef RES_VAP
 #undef RES_MTP
 #undef RES_MTPA
 
@@ -42,7 +42,7 @@
 #undef VAR
 #undef ALIGN
 
-#undef INIT_RES_UINT
+#undef INIT_RES_VAP
 #undef INIT_RES_MPT
 #undef INIT_RES_MPTA
 
@@ -58,8 +58,8 @@
 #undef IF_ECODE_UPDATE_RETURN
 #undef IF_ERES_UPDATE_RETURN
 
-#undef VALIDATE_DOM_ORDER
-#undef VALIDATE_DOM_DOMAIN
+#undef IF_ECODE_GOTO_CLEANUP
+#undef IF_ERES_GOTO_CLEANUP
 
 #undef COMPUTE_MTP_ALLOC_SIZE
 #undef COMPUTE_ARR_ALLOC_SIZE
