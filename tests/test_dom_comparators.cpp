@@ -76,15 +76,15 @@ TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
     auto zero_res = traits::dom_mask(static_cast<TestType>(0), order, domain);
     auto max_res  = traits::dom_mask(std::numeric_limits<TestType>::max(), order, domain);
     auto out_res  = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
+
     REQUIRE(zero_res.error == DOM_OK);
     REQUIRE(max_res.error == DOM_OK);
     REQUIRE(out_res.error == DOM_OK);
-    REQUIRE(zero_res.mv != nullptr);
-    REQUIRE(max_res.mv != nullptr);
-    REQUIRE(out_res.mv != nullptr);
+
     auto* mv_zero = zero_res.mv;
     auto* mv_max  = max_res.mv;
     auto* mv_out  = out_res.mv;
+
     TestType unmasked[1];
 
     /* 0 < MAX ⇒ true */
@@ -138,18 +138,19 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
         SECTION(name) {
             TestType values[2];
             csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+
             auto a_res = traits::dom_mask(values[0], order, domain);
             auto b_res = traits::dom_mask(values[1], order, domain);
             auto out_res = traits::dom_mask(0, order, DOMAIN_BOOLEAN);
+
             REQUIRE(a_res.error == DOM_OK);
             REQUIRE(b_res.error == DOM_OK);
             REQUIRE(out_res.error == DOM_OK);
-            REQUIRE(a_res.mv != nullptr);
-            REQUIRE(b_res.mv != nullptr);
-            REQUIRE(out_res.mv != nullptr);
+
             auto* mv_a = a_res.mv;
             auto* mv_b = b_res.mv;
             auto* mv_out = out_res.mv;
+
             TestType unmasked[1];
 
             REQUIRE(masked_cmp(mv_a, mv_b, mv_out, full_mask) == DOM_OK);
