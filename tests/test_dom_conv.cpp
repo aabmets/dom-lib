@@ -22,25 +22,29 @@ struct dom_traits;
 #define DEFINE_DOM_TRAITS(BL)                                                                                           \
 template<>                                                                                                              \
 struct dom_traits<UINT(BL)> {                                                                                           \
-    using mskd_t = MT(BL);                                                                                              \
-    using mtp = MTP(BL);                                                                                                \
-    using mtpa = MTPA(BL);                                                                                              \
-    using uint = UINT(BL);                                                                                              \
+    static ECODE            dom_free            (MTP(BL) mv)                                                            \
+                                                { return FN(dom_free, BL)(mv); }                                        \
                                                                                                                         \
-    static void    dom_free         (mtp mv)                           { FN(dom_free, BL)(mv); }                        \
-    static mtp     dom_mask         (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }            \
-    static uint    dom_unmask       (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }         \
-    static int     dom_conv_btoa    (mtp mv)                           { return FN(dom_conv_btoa, BL)(mv); }            \
-    static int     dom_conv_atob    (mtp mv)                           { return FN(dom_conv_atob, BL)(mv); }            \
+    static ECODE            dom_free_many       (MTPA(BL) mvs, uint8_t count, bool free_array)                          \
+                                                { return FN(dom_free_many, BL)(mvs, count, free_array); }               \
                                                                                                                         \
-    static int     dom_conv_many    (mtpa mvs, uint8_t c, domain_t td)                                                  \
-                                    { return FN(dom_conv_many, BL)(mvs, c, td); }                                       \
+    static RES_MTP(BL)      dom_mask            (UINT(BL) value, uint8_t order, domain_t domain)                        \
+                                                { return FN(dom_mask, BL)(value, order, domain); }                      \
                                                                                                                         \
-    static mtpa    dom_mask_many    (const uint* values, uint8_t count, uint8_t order, domain_t domain)                 \
-                                    { return FN(dom_mask_many, BL)(values, count, order, domain); }                     \
+    static RES_MTPA(BL)     dom_mask_many       (UINT(BL)* value, uint8_t count, uint8_t order, domain_t domain)        \
+                                                { return FN(dom_mask_many, BL)(value, count, order, domain); }          \
                                                                                                                         \
-    static void    dom_free_many    (mtpa mvs, uint8_t count, bool free_array)                                          \
-                                    { FN(dom_free_many, BL)(mvs, count, free_array); }                                  \
+    static ECODE            dom_unmask          (MTP(BL) mv, UINT(BL)* out, uint8_t index)                              \
+                                                { return FN(dom_unmask, BL)(mv, out, index); }                          \
+                                                                                                                        \
+    static ECODE            dom_conv_btoa       (MTP(BL) mv)                                                            \
+                                                { return FN(dom_conv_btoa, BL)(mv); }                                   \
+                                                                                                                        \
+    static ECODE            dom_conv_atob       (MTP(BL) mv)                                                            \
+                                                { return FN(dom_conv_atob, BL)(mv); }                                   \
+                                                                                                                        \
+    static ECODE            dom_conv_many       (MTPA(BL) mvs, uint8_t count, domain_t target_domain)                   \
+                                                { return FN(dom_conv_many, BL)(mvs, count, target_domain); }            \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -64,25 +68,27 @@ TEMPLATE_TEST_CASE(
     auto expected = static_cast<TestType>(value[0]);
 
     // Mask expected value with boolean domain
-    auto* mv = traits::dom_mask(expected, order, DOMAIN_BOOLEAN);
-    REQUIRE(mv->domain == DOMAIN_BOOLEAN);
+    auto res = traits::dom_mask(expected, order, DOMAIN_BOOLEAN);
+    REQUIRE(res.error == DOM_OK);
+    REQUIRE(res.mv != nullptr);
+    REQUIRE(res.mv->domain == DOMAIN_BOOLEAN);
     TestType unmasked[1];
 
-    REQUIRE(traits::dom_conv_btoa(mv) == 0);
+    REQUIRE(traits::dom_conv_btoa(res.mv) == DOM_OK);
 
     // Check unmasking from the arithmetic domain
-    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(res.mv, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
-    REQUIRE(mv->domain == DOMAIN_ARITHMETIC);
+    REQUIRE(res.mv->domain == DOMAIN_ARITHMETIC);
 
-    REQUIRE(traits::dom_conv_atob(mv) == 0);
+    REQUIRE(traits::dom_conv_atob(res.mv) == DOM_OK);
 
     // Check unmasking back in the boolean domain
-    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(res.mv, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
-    REQUIRE(mv->domain == DOMAIN_BOOLEAN);
+    REQUIRE(res.mv->domain == DOMAIN_BOOLEAN);
 
-    traits::dom_free(mv);
+    traits::dom_free(res.mv);
 }
 
 
@@ -98,27 +104,28 @@ TEMPLATE_TEST_CASE(
     TestType texts[COUNT];
     csprng_read_array(reinterpret_cast<uint8_t*>(texts), sizeof(texts));
 
-    auto** mvs = traits::dom_mask_many(
+    auto res = traits::dom_mask_many(
         texts, COUNT, static_cast<uint8_t>(order), DOMAIN_BOOLEAN
     );
-    REQUIRE(mvs != nullptr);
+    REQUIRE(res.error == DOM_OK);
+    REQUIRE(res.mvs != nullptr);
     for (uint8_t i = 0; i < COUNT; ++i)
-        REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
+        REQUIRE(res.mvs[i]->domain == DOMAIN_BOOLEAN);
     TestType unmasked[1];
 
-    REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_ARITHMETIC) == 0);
+    REQUIRE(traits::dom_conv_many(res.mvs, COUNT, DOMAIN_ARITHMETIC) == DOM_OK);
     for (uint8_t i = 0; i < COUNT; ++i) {
-        REQUIRE(mvs[i]->domain == DOMAIN_ARITHMETIC);
-        REQUIRE(traits::dom_unmask(mvs[i], unmasked, 0) == 0);
+        REQUIRE(res.mvs[i]->domain == DOMAIN_ARITHMETIC);
+        REQUIRE(traits::dom_unmask(res.mvs[i], unmasked, 0) == DOM_OK);
         REQUIRE(unmasked[0] == texts[i]);
     }
 
-    REQUIRE(traits::dom_conv_many(mvs, COUNT, DOMAIN_BOOLEAN) == 0);
+    REQUIRE(traits::dom_conv_many(res.mvs, COUNT, DOMAIN_BOOLEAN) == DOM_OK);
     for (uint8_t i = 0; i < COUNT; ++i) {
-        REQUIRE(mvs[i]->domain == DOMAIN_BOOLEAN);
-        REQUIRE(traits::dom_unmask(mvs[i], unmasked, 0) == 0);
+        REQUIRE(res.mvs[i]->domain == DOMAIN_BOOLEAN);
+        REQUIRE(traits::dom_unmask(res.mvs[i], unmasked, 0) == DOM_OK);
         REQUIRE(unmasked[0] == texts[i]);
     }
 
-    traits::dom_free_many(mvs, COUNT, true);
+    traits::dom_free_many(res.mvs, COUNT, true);
 }

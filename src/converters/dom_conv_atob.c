@@ -17,17 +17,18 @@
 #include "internal/dom_internal_defs.h"
 
 
-#define DOM_ATOB_HELPERS(BL)                                                    \
-static int FN(csa, BL)(                                                         \
+#define DOM_CONV_ATOB(BL)                                                       \
+                                                                                \
+static ECODE FN(csa, BL)(                                                       \
         MTP(BL) x,                                                              \
         MTP(BL) y,                                                              \
         MTP(BL) z,                                                              \
         MTPA(BL) s_res,                                                         \
         MTPA(BL) c_res                                                          \
 ) {                                                                             \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(5, x->order, x->domain);              \
-    if (!tmp)                                                                   \
-        return -1;                                                              \
+    RES_MTPA(BL) res = FN(dom_alloc_many, BL)(5, x->order, x->domain);          \
+    IF_ECODE_UPDATE_RETURN(res.error, DOM_FUNC_CONV_ATOB, 0xAA00)               \
+    MTPA(BL) tmp = res.mvs;                                                     \
                                                                                 \
     /*  a = x ^ y  */                                                           \
     MTP(BL) a = tmp[0];                                                         \
@@ -43,9 +44,8 @@ static int FN(csa, BL)(                                                         
                                                                                 \
     /*  v = a & w  */                                                           \
     MTP(BL) v = tmp[3];                                                         \
-    int rc = FN(dom_bool_and, BL)(a, w, v);                                     \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_bool_and, BL)(a, w, v);                                \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CONV_ATOB, 0xAA11)                   \
                                                                                 \
     /*  c = x ^ v  */                                                           \
     MTP(BL) c = tmp[4];                                                         \
@@ -58,11 +58,12 @@ static int FN(csa, BL)(                                                         
     MTP(BL) mvs[3] = { a, w, v };                                               \
     FN(dom_free_many, BL)(mvs, 3, false);                                       \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
+                                                                                \
 /* NOLINTNEXTLINE(misc-no-recursion) */                                         \
-static int FN(csa_tree, BL)(                                                    \
+static ECODE FN(csa_tree, BL)(                                                  \
         MTP(BL) vals[],                                                         \
         MTPA(BL) s_res,                                                         \
         MTPA(BL) c_res,                                                         \
@@ -74,66 +75,69 @@ static int FN(csa_tree, BL)(                                                    
     const uint8_t len_min1 = len - 1;                                           \
     MTP(BL) mv = vals[0];                                                       \
                                                                                 \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(2, mv->order, mv->domain);            \
-    if (!tmp)                                                                   \
-        return -1;                                                              \
+    RES_MTPA(BL) res = FN(dom_alloc_many, BL)(2, mv->order, mv->domain);        \
+    IF_ECODE_UPDATE_RETURN(res.error, DOM_FUNC_CONV_ATOB, 0xAA22)               \
+    MTPA(BL) tmp = res.mvs;                                                     \
                                                                                 \
-    int rc = FN(csa_tree, BL)(vals, &tmp[0], &tmp[1], len_min1);                \
-    if (!rc)                                                                    \
-        rc = FN(csa, BL)(tmp[0], tmp[1], vals[len_min1], s_res, c_res);         \
+    ECODE ecode = FN(csa_tree, BL)(vals, &tmp[0], &tmp[1], len_min1);           \
+    if (ecode) {                                                                \
+        ecode = set_dom_error_location(                                         \
+            ecode, DOM_FUNC_CONV_ATOB, 0xAA33                                   \
+        );                                                                      \
+    } else {                                                                    \
+        ecode = FN(csa, BL)(tmp[0], tmp[1], vals[len_min1], s_res, c_res);      \
+        if (ecode) {                                                            \
+            ecode = set_dom_error_location(                                     \
+                ecode, DOM_FUNC_CONV_ATOB, 0xAA44                               \
+            );                                                                  \
+        }                                                                       \
+    }                                                                           \
                                                                                 \
     FN(dom_free_many, BL)(tmp, 2, true);                                        \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
-
-
-#ifndef DOM_CONV_ATOB
-#define DOM_CONV_ATOB(BL)                                                       \
                                                                                 \
-DOM_ATOB_HELPERS(BL)                                                            \
                                                                                 \
 /*   Converts masked shares from arithmetic to boolean domain using        */   \
 /*   the high-order recursive carry-save-adder method of Liu et al.,       */   \
 /*   “A Low-Latency High-Order Arithmetic to Boolean Masking Conversion”   */   \
 /*   Link: https://eprint.iacr.org/2024/045.pdf                            */   \
-int FN(dom_conv_atob, BL)(MTP(BL) mv)                                           \
+ECODE FN(dom_conv_atob, BL)(MTP(BL) mv)                                         \
 {                                                                               \
-    if (!mv) {                                                                  \
-        return -1;                                                              \
-    } else if (mv->domain == DOMAIN_BOOLEAN)                                    \
-        return 0;                                                               \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_CONV_ATOB, 0xAA55)                    \
+    if (mv->domain == DOMAIN_BOOLEAN) {                                         \
+        return DOM_OK;                                                          \
+    }                                                                           \
                                                                                 \
-    MTPA(BL) vals = FN(dom_mask_many, BL)                                       \
-        (mv->shares, mv->share_count, mv->order, DOMAIN_BOOLEAN);               \
-    if (!vals)                                                                  \
-        return -1;                                                              \
+    RES_MTPA(BL) vals_res = FN(dom_mask_many, BL)(                              \
+        mv->shares, mv->share_count, mv->order, DOMAIN_BOOLEAN                  \
+    );                                                                          \
+    IF_ECODE_UPDATE_RETURN(vals_res.error, DOM_FUNC_CONV_ATOB, 0xAA66)          \
+    MTPA(BL) vals = vals_res.mvs;                                               \
                                                                                 \
-    int rc = 0;                                                                 \
+    ECODE ecode = DOM_OK;                                                       \
     MTP(BL) s_res = NULL;                                                       \
     MTP(BL) c_res = NULL;                                                       \
-    MTP(BL) k_res = FN(dom_alloc, BL)(mv->order, DOMAIN_BOOLEAN);               \
-    if (!k_res) {                                                               \
-        rc = -1;                                                                \
-        goto cleanup;                                                           \
-    }                                                                           \
+    MTP(BL) k_out = NULL;                                                       \
+    RES_MTP(BL) k_res = FN(dom_alloc, BL)(mv->order, DOMAIN_BOOLEAN);           \
+    IF_ECODE_GOTO_CLEANUP(k_res.error, DOM_FUNC_CONV_ATOB, 0xAA77)              \
+    k_out = k_res.mv;                                                           \
                                                                                 \
     if (mv->share_count == 2) {                                                 \
         s_res = vals[0];                                                        \
         c_res = vals[1];                                                        \
     } else {                                                                    \
-        rc = FN(csa_tree, BL)(vals, &s_res, &c_res, mv->share_count);           \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(csa_tree, BL)(vals, &s_res, &c_res, mv->share_count);        \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_CONV_ATOB, 0xAA88)                \
     }                                                                           \
-    rc = FN(dom_ksa_carry, BL)(s_res, c_res, k_res);                            \
-    if (rc)                                                                     \
-        goto cleanup;                                                           \
+    ecode = FN(dom_ksa_carry, BL)(s_res, c_res, k_out);                         \
+    IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_CONV_ATOB, 0xAA99)                    \
                                                                                 \
-    FN(dom_bool_xor, BL)(s_res, k_res, k_res);                                  \
-    FN(dom_bool_xor, BL)(c_res, k_res, k_res);                                  \
+    FN(dom_bool_xor, BL)(s_res, k_out, k_out);                                  \
+    FN(dom_bool_xor, BL)(c_res, k_out, k_out);                                  \
                                                                                 \
-    memcpy(mv->shares, k_res->shares, mv->share_bytes);                         \
+    memcpy(mv->shares, k_out->shares, mv->share_bytes);                         \
     mv->domain = DOMAIN_BOOLEAN;                                                \
                                                                                 \
     cleanup:                                                                    \
@@ -144,13 +148,11 @@ int FN(dom_conv_atob, BL)(MTP(BL) mv)                                           
         if (c_res)                                                              \
             FN(dom_free, BL)(c_res);                                            \
     }                                                                           \
-    if (k_res)                                                                  \
-        FN(dom_free, BL)(k_res);                                                \
+    if (k_out)                                                                  \
+        FN(dom_free, BL)(k_out);                                                \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
-
-#endif //DOM_CONV_ATOB
 
 
 DOM_CONV_ATOB(8)

@@ -15,52 +15,52 @@
 #include "internal/dom_internal_defs.h"
 
 
-#ifndef DOM_CONV
 #define DOM_CONV(BL)                                                            \
                                                                                 \
-int FN(dom_conv, BL)(MTP(BL) mv, domain_t target_domain)                        \
+ECODE FN(dom_conv, BL)(MTP(BL) mv, const domain_t target_domain)                \
 {                                                                               \
-    if (mv) {                                                                   \
-        if (mv->domain == target_domain)                                        \
-            return 0;                                                           \
-        int(*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                   \
-            ? FN(dom_conv_atob, BL)                                             \
-            : FN(dom_conv_btoa, BL);                                            \
-        return conv(mv);                                                        \
+    IF_NULL_PTR_RETURN_ECODE(mv, DOM_FUNC_CONV, 0xAA00)                         \
+    if (mv->domain == target_domain) {                                          \
+        return DOM_OK;                                                          \
     }                                                                           \
-    return -1;                                                                  \
+    ECODE (*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                    \
+        ? FN(dom_conv_atob, BL)                                                 \
+        : FN(dom_conv_btoa, BL);                                                \
+    return conv(mv);                                                            \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_conv_many, BL)(                                                      \
+ECODE FN(dom_conv_many, BL)(                                                    \
         MTPA(BL) mvs,                                                           \
-        uint8_t count,                                                          \
-        domain_t target_domain                                                  \
+        const uint8_t count,                                                    \
+        const domain_t target_domain                                            \
 ) {                                                                             \
-    if (!mvs || count < 2)                                                      \
-        return -1;                                                              \
+    IF_NULL_PTR_RETURN_ECODE(mvs, DOM_FUNC_CONV_MANY, 0xAA11)                   \
+    IF_NULL_PTR_RETURN_ECODE(mvs[0], DOM_FUNC_CONV_MANY, 0xAA22)                \
+    IF_COND_RETURN_ECODE(count < 1, DOM_FUNC_CONV_MANY, 0xAA33)                 \
                                                                                 \
-    int rc = 0;                                                                 \
     const uint8_t pair_count = count - 1;                                       \
-    int(*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                       \
+    ECODE (*conv)(MTP(BL)) = target_domain == DOMAIN_BOOLEAN                    \
         ? FN(dom_conv_atob, BL)                                                 \
         : FN(dom_conv_btoa, BL);                                                \
                                                                                 \
+    ECODE ecode = DOM_OK;                                                       \
     for (uint8_t i = 0; i < pair_count; ++i) {                                  \
         MTP(BL) a = mvs[i];                                                     \
         MTP(BL) b = mvs[i+1];                                                   \
                                                                                 \
-        if (!a || !b || a->sig != b->sig)                                       \
-            return -1;                                                          \
+        IF_NULL_PTR_RETURN_ECODE(b, DOM_FUNC_CONV_MANY, 0xAA44)                 \
+        if (a->sig != b->sig) {                                                 \
+            return get_dom_error_code(                                          \
+                DOM_ERROR_SIG_MISMATCH, DOM_FUNC_CONV_MANY, 0xAA55              \
+            );                                                                  \
+        }                                                                       \
                                                                                 \
-        rc = conv(a);                                                           \
-        if (rc)                                                                 \
-            return rc;                                                          \
+        ecode = conv(a);                                                        \
+        IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CONV_MANY, 0xAA66)               \
     }                                                                           \
     return conv(mvs[pair_count]);                                               \
 }                                                                               \
-
-#endif //DOM_CONV
 
 
 DOM_CONV(8)
