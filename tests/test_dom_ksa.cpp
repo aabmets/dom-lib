@@ -22,17 +22,26 @@ struct dom_traits;
 #define DEFINE_DOM_TRAITS(BL)                                                                                           \
 template<>                                                                                                              \
 struct dom_traits<UINT(BL)> {                                                                                           \
-    using mskd_t = MT(BL);                                                                                              \
-    using mtp = MTP(BL);                                                                                                \
-    using mtpa = MTPA(BL);                                                                                              \
-    using uint = UINT(BL);                                                                                              \
+    static RES_MTP(BL)      dom_alloc           (uint8_t order, domain_t domain)                                        \
+                                                { return FN(dom_alloc, BL)(order, domain); }                            \
                                                                                                                         \
-    static void    dom_free      (mtp mv)                           { FN(dom_free, BL)(mv); }                           \
-    static mtp     dom_alloc     (uint8_t o, domain_t d)            { return FN(dom_alloc, BL)(o, d); }                 \
-    static mtp     dom_mask      (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }               \
-    static uint    dom_unmask    (mtp mv, uint* o, uint8_t i)       { return FN(dom_unmask, BL)(mv, o, i); }            \
-    static int     dom_carry     (mtp a, mtp b, mtp out)            { return FN(dom_ksa_carry, BL)(a, b, out); }        \
-    static int     dom_borrow    (mtp a, mtp b, mtp out)            { return FN(dom_ksa_borrow, BL)(a, b, out); }       \
+    static ECODE            dom_free            (MTP(BL) mv)                                                            \
+                                                { return FN(dom_free, BL)(mv); }                                        \
+                                                                                                                        \
+    static RES_MTP(BL)      dom_mask            (UINT(BL) value, uint8_t order, domain_t domain)                        \
+                                                { return FN(dom_mask, BL)(value, order, domain); }                      \
+                                                                                                                        \
+    static RES_MTPA(BL)     dom_mask_many       (UINT(BL)* value, uint8_t count, uint8_t order, domain_t domain)        \
+                                                { return FN(dom_mask_many, BL)(value, count, order, domain); }          \
+                                                                                                                        \
+    static ECODE            dom_unmask          (MTP(BL) mv, UINT(BL)* out, uint8_t index)                              \
+                                                { return FN(dom_unmask, BL)(mv, out, index); }                          \
+                                                                                                                        \
+    static ECODE            dom_carry           (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_ksa_carry, BL)(a, b, out); }                            \
+                                                                                                                        \
+    static ECODE            dom_borrow          (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_ksa_borrow, BL)(a, b, out); }                           \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -85,7 +94,6 @@ static T ref_borrow_word_shifted(T a, T b) {
 template<typename T, typename RefFn, typename KsaFn>
 static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
     using traits = dom_traits<T>;
-    using mskd_t = typename traits::mskd_t;
 
     const int order = GENERATE(range(1, 4));
     INFO("security order = " << order);
@@ -93,15 +101,24 @@ static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
     T vals[2];
     csprng_read_array(reinterpret_cast<uint8_t*>(vals), sizeof(vals));
 
-    mskd_t* mv_a = traits::dom_mask(vals[0], order, DOMAIN_BOOLEAN);
-    mskd_t* mv_b = traits::dom_mask(vals[1], order, DOMAIN_BOOLEAN);
-    mskd_t* mv_g = traits::dom_alloc(order, DOMAIN_BOOLEAN);
+    auto a_res = traits::dom_mask(vals[0], order, DOMAIN_BOOLEAN);
+    auto b_res = traits::dom_mask(vals[1], order, DOMAIN_BOOLEAN);
+    auto g_res = traits::dom_alloc(order, DOMAIN_BOOLEAN);
+    REQUIRE(a_res.error == DOM_OK);
+    REQUIRE(b_res.error == DOM_OK);
+    REQUIRE(g_res.error == DOM_OK);
+    REQUIRE(a_res.mv != nullptr);
+    REQUIRE(b_res.mv != nullptr);
+    REQUIRE(g_res.mv != nullptr);
+    auto* mv_a = a_res.mv;
+    auto* mv_b = b_res.mv;
+    auto* mv_g = g_res.mv;
     T unmasked[1];
 
-    REQUIRE(ksa_fn(mv_a, mv_b, mv_g) == 0);
+    REQUIRE(ksa_fn(mv_a, mv_b, mv_g) == DOM_OK);
 
     T expected = ref_fn(vals[0], vals[1]);
-    REQUIRE(traits::dom_unmask(mv_g, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(mv_g, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 
     traits::dom_free(mv_a);

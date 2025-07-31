@@ -17,46 +17,37 @@
 #include "internal/dom_internal_funcs.h"
 
 
-#ifndef DOM_OPS_ARITH
 #define DOM_OPS_ARITH(TYPE, BL)                                                 \
                                                                                 \
-int FN(dom_arith_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    \
+ECODE FN(dom_arith_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                  \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);             \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_ARITH_ADD, 0xAA00)                   \
                                                                                 \
-    TYPE sh_out[out->share_count];                                              \
+    TYPE* sh_out = out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < out->share_count; ++i) {                            \
         sh_out[i] = a->shares[i] + b->shares[i];                                \
     }                                                                           \
-    memcpy(out->shares, sh_out, out->share_bytes);                              \
-                                                                                \
-    secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_arith_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    \
+ECODE FN(dom_arith_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                  \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);             \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_ARITH_SUB, 0xAA11)                   \
                                                                                 \
-    TYPE sh_out[out->share_count];                                              \
+    TYPE* sh_out = out->shares;                                                 \
                                                                                 \
     for (uint8_t i = 0; i < out->share_count; ++i) {                            \
         sh_out[i] = a->shares[i] - b->shares[i];                                \
     }                                                                           \
-    memcpy(out->shares, sh_out, out->share_bytes);                              \
-                                                                                \
-    secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
@@ -64,20 +55,18 @@ int FN(dom_arith_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
-int FN(dom_arith_mult, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
+ECODE FN(dom_arith_mult, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                 \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);                  \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_ARITHMETIC);             \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_ARITH_MULT, 0xAA22)                  \
                                                                                 \
     const uint32_t pair_count = out->share_count * out->order / 2;              \
     const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
     TYPE rnd[pair_count];                                                       \
                                                                                 \
-    rc = csprng_read_array((uint8_t*)rnd, pair_bytes);                          \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ecode = csprng_read_array((uint8_t*)rnd, pair_bytes);                       \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_ARITH_MULT, 0xAA33)                  \
                                                                                 \
     TYPE sh_out[out->share_count];                                              \
                                                                                 \
@@ -93,15 +82,13 @@ int FN(dom_arith_mult, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   
         }                                                                       \
     }                                                                           \
     memcpy(out->shares, sh_out, out->share_bytes);                              \
-    rc = FN(dom_refresh, BL)(out);                                              \
+    ecode = FN(dom_refresh, BL)(out);                                           \
                                                                                 \
     secure_memzero(rnd, pair_bytes);                                            \
     secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
-
-#endif //DOM_OPS_ARITH
 
 
 DOM_OPS_ARITH(uint8_t, 8)

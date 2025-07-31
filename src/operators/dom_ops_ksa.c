@@ -9,7 +9,6 @@
  *   SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -18,29 +17,30 @@
 #include "internal/dom_internal_funcs.h"
 
 
-#ifndef DOM_KSA
 #define DOM_KSA(BL)                                                             \
                                                                                 \
-int FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                  \
+ECODE FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                \
+    ECODE ecode = DOM_OK;                                                       \
+    uint8_t state = 0x0;                                                        \
+                                                                                \
     MTP(BL) mvs[] = { a, b, out };                                              \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                      \
+    IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA00)                    \
                                                                                 \
-    MTPA(BL) clones = FN(dom_clone_many, BL)(a, 5, true);                       \
-    if (!clones)                                                                \
-        return -1;                                                              \
+    RES_MTPA(BL) clones = FN(dom_clone_many, BL)(a, 5, true);                   \
+    IF_ECODE_GOTO_CLEANUP(clones.error, DOM_FUNC_KSA_CARRY, 0xAA11)             \
                                                                                 \
-    MTP(BL) p = clones[0];                                                      \
-    MTP(BL) g = clones[1];                                                      \
-    MTP(BL) tmp = clones[2];                                                    \
-    MTP(BL) p_shift = clones[3];                                                \
-    MTP(BL) g_shift = clones[4];                                                \
+    state = 0xFF;                                                               \
+    MTPA(BL) c_mvs = clones.mvs;                                                \
+    MTP(BL) p = c_mvs[0];                                                       \
+    MTP(BL) g = c_mvs[1];                                                       \
+    MTP(BL) tmp = c_mvs[2];                                                     \
+    MTP(BL) p_shift = c_mvs[3];                                                 \
+    MTP(BL) g_shift = c_mvs[4];                                                 \
                                                                                 \
     FN(dom_bool_xor, BL)(a, b, p);                                              \
-    rc = FN(dom_bool_and, BL)(a, b, g);                                         \
-    if (rc)                                                                     \
-        goto cleanup;                                                           \
+    ecode = FN(dom_bool_and, BL)(a, b, g);                                      \
+    IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA22)                    \
                                                                                 \
     const uint8_t bl = (uint8_t)a->bit_length;                                  \
     for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
@@ -50,49 +50,51 @@ int FN(dom_ksa_carry, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                  
         FN(dom_bool_shl, BL)(p_shift, dist);                                    \
         FN(dom_bool_shl, BL)(g_shift, dist);                                    \
                                                                                 \
-        rc = FN(dom_bool_and, BL)(p, g_shift, tmp);                             \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_and, BL)(p, g_shift, tmp);                          \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA33)                \
                                                                                 \
         FN(dom_bool_xor, BL)(g, tmp, g);                                        \
         secure_memzero(tmp->shares, tmp->share_bytes);                          \
                                                                                 \
-        rc = FN(dom_bool_and, BL)(p, p_shift, p);                               \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_and, BL)(p, p_shift, p);                            \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA44)                \
     }                                                                           \
     FN(dom_bool_shl, BL)(g, 1);                                                 \
     memcpy(out->shares, g->shares, g->share_bytes);                             \
                                                                                 \
     cleanup:                                                                    \
-    FN(dom_free_many, BL)(clones, 5, true);                                     \
+    if (state == 0xFF) {                                                        \
+        FN(dom_free_many, BL)(c_mvs, 5, true);                                  \
+    }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                 \
+ECODE FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {               \
+    ECODE ecode = DOM_OK;                                                       \
+    uint8_t state = 0x0;                                                        \
+                                                                                \
     MTP(BL) mvs[] = { a, b, out };                                              \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                      \
+    IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_BORROW, 0xAA55)                   \
                                                                                 \
-    MTPA(BL) clones = FN(dom_clone_many, BL)(a, 6, false);                      \
-    if (!clones)                                                                \
-        return -1;                                                              \
+    RES_MTPA(BL) clones = FN(dom_clone_many, BL)(a, 6, false);                  \
+    IF_ECODE_GOTO_CLEANUP(clones.error, DOM_FUNC_KSA_BORROW, 0xAA66)            \
                                                                                 \
-    MTP(BL) p = clones[0];                                                      \
-    MTP(BL) g = clones[1];                                                      \
-    MTP(BL) tmp = clones[2];                                                    \
-    MTP(BL) p_shift = clones[3];                                                \
-    MTP(BL) g_shift = clones[4];                                                \
-    MTP(BL) a_inv = clones[5];                                                  \
+    state = 0xFF;                                                               \
+    MTPA(BL) c_mvs = clones.mvs;                                                \
+    MTP(BL) p = c_mvs[0];                                                       \
+    MTP(BL) g = c_mvs[1];                                                       \
+    MTP(BL) tmp = c_mvs[2];                                                     \
+    MTP(BL) p_shift = c_mvs[3];                                                 \
+    MTP(BL) g_shift = c_mvs[4];                                                 \
+    MTP(BL) a_inv = c_mvs[5];                                                   \
                                                                                 \
     FN(dom_bool_not, BL)(a_inv);                                                \
     FN(dom_bool_xor, BL)(a_inv, b, p);                                          \
-    rc = FN(dom_bool_and, BL)(a_inv, b, g);                                     \
-    if (rc)                                                                     \
-        goto cleanup;                                                           \
+    ecode = FN(dom_bool_and, BL)(a_inv, b, g);                                  \
+    IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA77)                    \
                                                                                 \
     const uint8_t bl = (uint8_t)a->bit_length;                                  \
     for (uint8_t dist = 1; dist < bl; dist <<= 1) {                             \
@@ -102,32 +104,29 @@ int FN(dom_ksa_borrow, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out) {                 
         FN(dom_bool_shl, BL)(p_shift, dist);                                    \
         FN(dom_bool_shl, BL)(g_shift, dist);                                    \
                                                                                 \
-        rc = FN(dom_bool_and, BL)(p, g_shift, tmp);                             \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_and, BL)(p, g_shift, tmp);                          \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA88)                \
                                                                                 \
-        rc = FN(dom_bool_and, BL)(g, tmp, g_shift);                             \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_and, BL)(g, tmp, g_shift);                          \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xAA99)                \
                                                                                 \
         FN(dom_bool_xor, BL)(g, tmp, g);                                        \
         secure_memzero(tmp->shares, tmp->share_bytes);                          \
         FN(dom_bool_xor, BL)(g, g_shift, g);                                    \
                                                                                 \
-        rc = FN(dom_bool_and, BL)(p, p_shift, p);                               \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_and, BL)(p, p_shift, p);                            \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_KSA_CARRY, 0xBB00)                \
     }                                                                           \
     FN(dom_bool_shl, BL)(g, 1);                                                 \
     memcpy(out->shares, g->shares, g->share_bytes);                             \
                                                                                 \
     cleanup:                                                                    \
-    FN(dom_free_many, BL)(clones, 6, true);                                     \
+    if (state == 0xFF) {                                                        \
+        FN(dom_free_many, BL)(c_mvs, 6, true);                                  \
+    }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
-
-#endif //DOM_KSA
 
 
 DOM_KSA(8)

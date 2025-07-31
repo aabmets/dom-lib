@@ -17,27 +17,24 @@
 #include "internal/dom_internal_funcs.h"
 
 
-#ifndef DOM_OPS_BOOL
 #define DOM_OPS_BOOL(TYPE, BL)                                                  \
                                                                                 \
 /*   Performs multiplication/AND logic on two masked shares    */               \
 /*   using the DOM-independent secure gadget as described by   */               \
 /*   Gross et al. in “Domain-Oriented Masking” (CHES 2016).    */               \
 /*   Link: https://eprint.iacr.org/2016/486.pdf                */               \
-int FN(dom_bool_and, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+ECODE FN(dom_bool_and, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
 {                                                                               \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_AND, 0xAA00)                    \
                                                                                 \
     const uint32_t pair_count = out->share_count * out->order / 2;              \
     const uint32_t pair_bytes = pair_count * sizeof(TYPE);                      \
     TYPE rnd[pair_count];                                                       \
                                                                                 \
-    rc = csprng_read_array((uint8_t*)rnd, pair_bytes);                          \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ecode = csprng_read_array((uint8_t*)rnd, pair_bytes);                       \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_AND, 0xAA11)                    \
                                                                                 \
     TYPE sh_out[out->share_count];                                              \
                                                                                 \
@@ -53,20 +50,19 @@ int FN(dom_bool_and, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     
         }                                                                       \
     }                                                                           \
     memcpy(out->shares, sh_out, out->share_bytes);                              \
-    rc = FN(dom_refresh, BL)(out);                                              \
+    ecode = FN(dom_refresh, BL)(out);                                           \
                                                                                 \
     secure_memzero(rnd, pair_bytes);                                            \
     secure_memzero(sh_out, out->share_bytes);                                   \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_or, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                      \
+ECODE FN(dom_bool_or, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                    \
 {                                                                               \
-    int rc = FN(dom_bool_and, BL)(a, b, out);                                   \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_bool_and, BL)(a, b, out);                              \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_OR, 0xAA22)                     \
                                                                                 \
     TYPE* sh_out = out->shares;                                                 \
                                                                                 \
@@ -74,16 +70,15 @@ int FN(dom_bool_or, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                      
         sh_out[i] ^= a->shares[i] ^ b->shares[i];                               \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_xor, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+ECODE FN(dom_bool_xor, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
 {                                                                               \
     MTP(BL) mvs[] = { a, b, out };                                              \
-    int rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                     \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_XOR, 0xAA33)                    \
                                                                                 \
     TYPE* sh_out = out->shares;                                                 \
                                                                                 \
@@ -91,129 +86,134 @@ int FN(dom_bool_xor, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     
         sh_out[i] = a->shares[i] ^ b->shares[i];                                \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_not, BL)(MTP(BL) mv) {                                          \
-    int rc = FN(dom_conv_atob, BL)(mv);                                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+ECODE FN(dom_bool_not, BL)(MTP(BL) mv)                                          \
+{                                                                               \
+    ECODE ecode = FN(dom_conv_atob, BL)(mv);                                    \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_NOT, 0xAA44)                    \
                                                                                 \
     mv->shares[0] = ~mv->shares[0];                                             \
                                                                                 \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_shr, BL)(MTP(BL) mv, uint8_t n) {                               \
-    int rc = FN(dom_conv_atob, BL)(mv);                                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+ECODE FN(dom_bool_shr, BL)(MTP(BL) mv, uint8_t n)                               \
+{                                                                               \
+    ECODE ecode = FN(dom_conv_atob, BL)(mv);                                    \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_SHR, 0xAA55)                    \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
     n %= bl;                                                                    \
     if (n == 0)                                                                 \
-        return 0;                                                               \
+        return DOM_OK;                                                          \
                                                                                 \
     for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
         mv->shares[i] >>= n;                                                    \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_shl, BL)(MTP(BL) mv, uint8_t n) {                               \
-    int rc = FN(dom_conv_atob, BL)(mv);                                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+ECODE FN(dom_bool_shl, BL)(MTP(BL) mv, uint8_t n)                               \
+{                                                                               \
+    ECODE ecode = FN(dom_conv_atob, BL)(mv);                                    \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_SHL, 0xAA66)                    \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
     n %= bl;                                                                    \
     if (n == 0)                                                                 \
-        return 0;                                                               \
+        return DOM_OK;                                                          \
                                                                                 \
     for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
         mv->shares[i] <<= n;                                                    \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_rotr, BL)(MTP(BL) mv, uint8_t n) {                              \
-    int rc = FN(dom_conv_atob, BL)(mv);                                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+ECODE FN(dom_bool_rotr, BL)(MTP(BL) mv, uint8_t n)                              \
+{                                                                               \
+    ECODE ecode = FN(dom_conv_atob, BL)(mv);                                    \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_ROTR, 0xAA77)                   \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
     n %= bl;                                                                    \
     if (n == 0)                                                                 \
-        return 0;                                                               \
+        return DOM_OK;                                                          \
                                                                                 \
     for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
         const TYPE v = mv->shares[i];                                           \
         mv->shares[i] = (v >> n) | (v << (bl - n));                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_rotl, BL)(MTP(BL) mv, uint8_t n)                                \
+ECODE FN(dom_bool_rotl, BL)(MTP(BL) mv, uint8_t n)                              \
 {                                                                               \
-    int rc = FN(dom_conv_atob, BL)(mv);                                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ECODE ecode = FN(dom_conv_atob, BL)(mv);                                    \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_ROTL, 0xAA88)                   \
                                                                                 \
     bit_length_t bl = mv->bit_length;                                           \
     n %= bl;                                                                    \
     if (n == 0)                                                                 \
-        return 0;                                                               \
+        return DOM_OK;                                                          \
                                                                                 \
     for (uint8_t i = 0; i < mv->share_count; ++i) {                             \
         const TYPE v = mv->shares[i];                                           \
         mv->shares[i] = (v << n) | (v >> (bl - n));                             \
     }                                                                           \
     asm volatile ("" ::: "memory");                                             \
-    return 0;                                                                   \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+ECODE FN(dom_bool_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
 {                                                                               \
-    MTP(BL) borrow = FN(dom_alloc, BL)(out->order, out->domain);                \
-    if (!borrow)                                                                \
-        return -1;                                                              \
-    int rc = FN(dom_ksa_borrow, BL)(a, b, borrow);                              \
-    if (!rc) {  /* no error */                                                  \
+    MTP(BL) mvs[] = { a, b, out };                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_ADD, 0xAA99)                    \
+                                                                                \
+    RES_MTP(BL) carry = FN(dom_alloc, BL)(out->order, out->domain);             \
+    IF_ECODE_UPDATE_RETURN(carry.error, DOM_FUNC_BOOL_ADD, 0xBB00)              \
+                                                                                \
+    ecode = FN(dom_ksa_carry, BL)(a, b, carry.mv);                              \
+    if (!ecode) {  /* no error */                                               \
         FN(dom_bool_xor, BL)(a, b, out);                                        \
-        FN(dom_bool_xor, BL)(out, borrow, out);                                 \
+        FN(dom_bool_xor, BL)(out, carry.mv, out);                               \
     }                                                                           \
-    FN(dom_free, BL)(borrow);                                                   \
+    FN(dom_free, BL)(carry.mv);                                                 \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_bool_add, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                     \
+ECODE FN(dom_bool_sub, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out)                   \
 {                                                                               \
-    MTP(BL) carry = FN(dom_alloc, BL)(out->order, out->domain);                 \
-    if (!carry)                                                                 \
-        return -1;                                                              \
-    int rc = FN(dom_ksa_carry, BL)(a, b, carry);                                \
-    if (!rc) {  /* no error */                                                  \
+    MTP(BL) mvs[] = { a, b, out };                                              \
+    ECODE ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_BOOL_SUB, 0xBB11)                    \
+                                                                                \
+    RES_MTP(BL) borrow = FN(dom_alloc, BL)(out->order, out->domain);            \
+    IF_ECODE_UPDATE_RETURN(borrow.error, DOM_FUNC_BOOL_SUB, 0xBB22)             \
+                                                                                \
+    ecode = FN(dom_ksa_borrow, BL)(a, b, borrow.mv);                            \
+    if (!ecode) {  /* no error */                                               \
         FN(dom_bool_xor, BL)(a, b, out);                                        \
-        FN(dom_bool_xor, BL)(out, carry, out);                                  \
+        FN(dom_bool_xor, BL)(out, borrow.mv, out);                              \
     }                                                                           \
-    FN(dom_free, BL)(carry);                                                    \
+    FN(dom_free, BL)(borrow.mv);                                                \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
-
-#endif //DOM_OPS_BOOL
 
 
 DOM_OPS_BOOL(uint8_t, 8)

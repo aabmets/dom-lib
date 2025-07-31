@@ -23,27 +23,57 @@ struct dom_traits;
 template<>                                                                                                              \
 struct dom_traits<UINT(BL)> {                                                                                           \
     using mskd_t = MT(BL);                                                                                              \
-    using mtp = MTP(BL);                                                                                                \
-    using mtpa = MTPA(BL);                                                                                              \
-    using uint = UINT(BL);                                                                                              \
                                                                                                                         \
-    static void    dom_free          (mtp mv)                           { FN(dom_free, BL)(mv); }                       \
-    static mtp     dom_mask          (uint v, uint8_t o, domain_t d)    { return FN(dom_mask, BL)(v, o, d); }           \
-    static uint    dom_unmask        (mtp mv, uint* o, uint8_t i)      { return FN(dom_unmask, BL)(mv, o, i); }         \
-    static int     dom_bool_and      (mtp a, mtp b, mtp o)              { return FN(dom_bool_and, BL)(a, b, o); }       \
-    static int     dom_bool_or       (mtp a, mtp b, mtp o)              { return FN(dom_bool_or, BL)(a, b, o); }        \
-    static int     dom_bool_xor      (mtp a, mtp b, mtp o)              { return FN(dom_bool_xor, BL)(a, b, o); }       \
-    static int     dom_bool_not      (mtp mv)                           { return FN(dom_bool_not, BL)(mv); }            \
-    static int     dom_bool_shr      (mtp mv, uint8_t n)                { return FN(dom_bool_shr, BL)(mv, n); }         \
-    static int     dom_bool_shl      (mtp mv, uint8_t n)                { return FN(dom_bool_shl, BL)(mv, n); }         \
-    static int     dom_bool_rotr     (mtp mv, uint8_t n)                { return FN(dom_bool_rotr, BL)(mv, n); }        \
-    static int     dom_bool_rotl     (mtp mv, uint8_t n)                { return FN(dom_bool_rotl, BL)(mv, n); }        \
-    static int     dom_bool_add      (mtp a, mtp b, mtp o)              { return FN(dom_bool_add, BL)(a, b, o); }       \
-    static int     dom_bool_sub      (mtp a, mtp b, mtp o)              { return FN(dom_bool_sub, BL)(a, b, o); }       \
-    static int     dom_arith_add     (mtp a, mtp b, mtp o)              { return FN(dom_arith_add, BL)(a, b, o); }      \
-    static int     dom_arith_sub     (mtp a, mtp b, mtp o)              { return FN(dom_arith_sub, BL)(a, b, o); }      \
-    static int     dom_arith_mult    (mtp a, mtp b, mtp o)              { return FN(dom_arith_mult, BL)(a, b, o); }     \
-    static int     dom_conv          (mtp mv, domain_t td)              { return FN(dom_conv, BL)(mv, td); }            \
+    static ECODE            dom_free            (MTP(BL) mv)                                                            \
+                                                { return FN(dom_free, BL)(mv); }                                        \
+                                                                                                                        \
+    static RES_MTP(BL)      dom_mask            (UINT(BL) value, uint8_t order, domain_t domain)                        \
+                                                { return FN(dom_mask, BL)(value, order, domain); }                      \
+                                                                                                                        \
+    static ECODE            dom_unmask          (MTP(BL) mv, UINT(BL)* out, uint8_t index)                              \
+                                                { return FN(dom_unmask, BL)(mv, out, index); }                          \
+                                                                                                                        \
+    static ECODE            dom_conv            (MTP(BL) mv, domain_t target_domain)                                    \
+                                                { return FN(dom_conv, BL)(mv, target_domain); }                         \
+                                                                                                                        \
+    static ECODE            dom_bool_and        (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_bool_and, BL)(a, b, out); }                             \
+                                                                                                                        \
+    static ECODE            dom_bool_or         (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_bool_or, BL)(a, b, out); }                              \
+                                                                                                                        \
+    static ECODE            dom_bool_xor        (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_bool_xor, BL)(a, b, out); }                             \
+                                                                                                                        \
+    static ECODE            dom_bool_not        (MTP(BL) mv)                                                            \
+                                                { return FN(dom_bool_not, BL)(mv); }                                    \
+                                                                                                                        \
+    static ECODE            dom_bool_shr        (MTP(BL) mv, uint8_t n)                                                 \
+                                                { return FN(dom_bool_shr, BL)(mv, n); }                                 \
+                                                                                                                        \
+    static ECODE            dom_bool_shl        (MTP(BL) mv, uint8_t n)                                                 \
+                                                { return FN(dom_bool_shl, BL)(mv, n); }                                 \
+                                                                                                                        \
+    static ECODE            dom_bool_rotr       (MTP(BL) mv, uint8_t n)                                                 \
+                                                { return FN(dom_bool_rotr, BL)(mv, n); }                                \
+                                                                                                                        \
+    static ECODE            dom_bool_rotl       (MTP(BL) mv, uint8_t n)                                                 \
+                                                { return FN(dom_bool_rotl, BL)(mv, n); }                                \
+                                                                                                                        \
+    static ECODE            dom_bool_add        (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_bool_add, BL)(a, b, out); }                             \
+                                                                                                                        \
+    static ECODE            dom_bool_sub        (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_bool_sub, BL)(a, b, out); }                             \
+                                                                                                                        \
+    static ECODE            dom_arith_add       (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_arith_add, BL)(a, b, out); }                            \
+                                                                                                                        \
+    static ECODE            dom_arith_sub       (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_arith_sub, BL)(a, b, out); }                            \
+                                                                                                                        \
+    static ECODE            dom_arith_mult      (MTP(BL) a, MTP(BL) b, MTP(BL) out)                                     \
+                                                { return FN(dom_arith_mult, BL)(a, b, out); }                           \
 };                                                                                                                      \
 
 DEFINE_DOM_TRAITS(8)
@@ -56,7 +86,7 @@ DEFINE_DOM_TRAITS(64)
 
 template<typename T>
 void test_binary_operation(
-        int (*masked_op)(
+        ECODE (*masked_op)(
             typename dom_traits<T>::mskd_t*,
             typename dom_traits<T>::mskd_t*,
             typename dom_traits<T>::mskd_t*
@@ -70,25 +100,34 @@ void test_binary_operation(
 
     T values[2];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv_a = traits::dom_mask(values[0], order, domain);
-    auto* mv_b = traits::dom_mask(values[1], order, domain);
-    auto* mv_out = traits::dom_mask(0, order, domain);
+    auto a_res = traits::dom_mask(values[0], order, domain);
+    auto b_res = traits::dom_mask(values[1], order, domain);
+    auto out_res = traits::dom_mask(0, order, domain);
+    REQUIRE(a_res.error == DOM_OK);
+    REQUIRE(b_res.error == DOM_OK);
+    REQUIRE(out_res.error == DOM_OK);
+    REQUIRE(a_res.mv != nullptr);
+    REQUIRE(b_res.mv != nullptr);
+    REQUIRE(out_res.mv != nullptr);
+    auto* mv_a = a_res.mv;
+    auto* mv_b = b_res.mv;
+    auto* mv_out = out_res.mv;
     T unmasked[1];
 
-    REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
+    REQUIRE(masked_op(mv_a, mv_b, mv_out) == DOM_OK);
 
     T expected = unmasked_op(values[0], values[1]);
-    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    traits::dom_conv(mv_a, counter_domain);
+    REQUIRE(traits::dom_conv(mv_a, counter_domain) == DOM_OK);
     REQUIRE(mv_a->domain == counter_domain);
-    REQUIRE(masked_op(mv_a, mv_b, mv_out) == 0);
+    REQUIRE(masked_op(mv_a, mv_b, mv_out) == DOM_OK);
     REQUIRE(mv_a->domain == domain);
 
-    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 
     traits::dom_free(mv_a);
@@ -99,7 +138,7 @@ void test_binary_operation(
 
 template<typename T>
 void test_unary_operation(
-        int (*masked_op)(typename dom_traits<T>::mskd_t*),
+        ECODE (*masked_op)(typename dom_traits<T>::mskd_t*),
         const std::function<T(T)>& unmasked_op,
         domain_t domain
 ) {
@@ -109,20 +148,23 @@ void test_unary_operation(
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = traits::dom_mask(values[0], order, domain);
+    auto res = traits::dom_mask(values[0], order, domain);
+    REQUIRE(res.error == DOM_OK);
+    REQUIRE(res.mv != nullptr);
+    auto* mv = res.mv;
     T unmasked[1];
 
-    REQUIRE(masked_op(mv) == 0);
+    REQUIRE(masked_op(mv) == DOM_OK);
 
     T expected = unmasked_op(values[0]);
-    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    traits::dom_conv(mv, counter_domain);
+    REQUIRE(traits::dom_conv(mv, counter_domain) == DOM_OK);
     REQUIRE(mv->domain == counter_domain);
-    REQUIRE(masked_op(mv) == 0);
+    REQUIRE(masked_op(mv) == DOM_OK);
     REQUIRE(mv->domain == domain);
 
     traits::dom_free(mv);
@@ -131,7 +173,7 @@ void test_unary_operation(
 
 template<typename T>
 void test_shift_rotate_operation(
-        int (*masked_op)(typename dom_traits<T>::mskd_t*, uint8_t),
+        ECODE (*masked_op)(typename dom_traits<T>::mskd_t*, uint8_t),
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
@@ -141,21 +183,24 @@ void test_shift_rotate_operation(
 
     T values[1];
     csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
-    auto* mv = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
-    uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
+    auto res = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
+    REQUIRE(res.error == DOM_OK);
+    REQUIRE(res.mv != nullptr);
+    auto* mv = res.mv;
     T unmasked[1];
 
-    REQUIRE(masked_op(mv, offset) == 0);
+    uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
+    REQUIRE(masked_op(mv, offset) == DOM_OK);
 
     T expected = unmasked_op(values[0], offset);
-    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == 0);
+    REQUIRE(traits::dom_unmask(mv, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 
     // Assert automatic domain conversion
     domain_t counter_domain = domain == DOMAIN_BOOLEAN ? DOMAIN_ARITHMETIC : DOMAIN_BOOLEAN;
-    traits::dom_conv(mv, counter_domain);
+    REQUIRE(traits::dom_conv(mv, counter_domain) == DOM_OK);
     REQUIRE(mv->domain == counter_domain);
-    REQUIRE(masked_op(mv, offset) == 0);
+    REQUIRE(masked_op(mv, offset) == DOM_OK);
     REQUIRE(mv->domain == domain);
 
     traits::dom_free(mv);
