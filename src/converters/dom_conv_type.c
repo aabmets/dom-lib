@@ -1,5 +1,5 @@
 /*
-*   Apache License 2.0
+ *   Apache License 2.0
  *
  *   Copyright (c) 2025, Mattias Aabmets
  *
@@ -21,7 +21,7 @@
 RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      \
 {                                                                               \
     RES_MTP(BLL) res = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);       \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_2TO1, 24)                     \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_2TO1, 0xAA00)                 \
                                                                                 \
     UINT(BLL)* out = res.mv->shares;                                            \
     const UINT(BLS)* s0 = mvs[0]->shares;                                       \
@@ -41,7 +41,7 @@ RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      
 RES_MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                       \
 {                                                                               \
     RES_MTPA(BLS) res = FN(dom_alloc_many, BLS)(2, mv->order, mv->domain);      \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO2, 44)                     \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO2, 0xAA11)                 \
                                                                                 \
     UINT(BLS)* s0 = res.mvs[0]->shares;                                         \
     UINT(BLS)* s1 = res.mvs[1]->shares;                                         \
@@ -63,7 +63,7 @@ RES_MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                       
 RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      \
 {                                                                               \
     RES_MTP(BLL) res = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);       \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_4TO1, 66)                     \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_4TO1, 0xAA22)                 \
                                                                                 \
     UINT(BLL)* out = res.mv->shares;                                            \
     const UINT(BLS)* s0 = mvs[0]->shares;                                       \
@@ -92,7 +92,7 @@ RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      
 RES_MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                       \
 {                                                                               \
     RES_MTPA(BLS) res = FN(dom_alloc_many, BLS)(4, mv->order, mv->domain);      \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO4, 95)                     \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO4, 0xAA33)                 \
                                                                                 \
     UINT(BLS)* s0 = res.mvs[0]->shares;                                         \
     UINT(BLS)* s1 = res.mvs[1]->shares;                                         \
@@ -122,7 +122,7 @@ RES_MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                       
 RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      \
 {                                                                               \
     RES_MTP(BLL) res = FN(dom_alloc, BLL)(mvs[0]->order, mvs[0]->domain);       \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_8TO1, 125)                    \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_8TO1, 0xAA44)                 \
                                                                                 \
     UINT(BLL)* out = res.mv->shares;                                            \
     const UINT(BLS)* s0 = mvs[0]->shares;                                       \
@@ -163,7 +163,7 @@ RES_MTP(BLL) FNCT(BLS, BLL)(MTPA(BLS) mvs)                                      
 RES_MTPA(BLS) FNCT(BLL, BLS)(MTP(BLL) mv)                                       \
 {                                                                               \
     RES_MTPA(BLS) res = FN(dom_alloc_many, BLS)(8, mv->order, mv->domain);      \
-    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO8, 166)                    \
+    IF_ERES_UPDATE_RETURN(res, DOM_FUNC_CONV_TYPE_1TO8, 0xAA55)                 \
                                                                                 \
     UINT(BLS)* s0 = res.mvs[0]->shares;                                         \
     UINT(BLS)* s1 = res.mvs[1]->shares;                                         \
