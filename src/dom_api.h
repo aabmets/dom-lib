@@ -111,6 +111,6 @@ MASKING_FUNCTIONS_CONV_TYPE(64, 8)    // 8/1 ratio
 
 #undef MASKING_FUNCTIONS
 #undef MASKING_FUNCTIONS_CONV_TYPE
-#include "internal/dom_internal_undefs.h"
+#include "internal/dom_internal_undefs.h"  // NOSONAR
 
 #endif //DOM_API_H

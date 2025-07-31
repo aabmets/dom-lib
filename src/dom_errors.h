@@ -249,6 +249,6 @@ static char* get_dom_error_message(const ECODE error)
 }
 #endif
 
-#include "internal/dom_internal_undefs.h"
+#include "internal/dom_internal_undefs.h"  // NOSONAR
 
 #endif //DOM_ERRORS_H

@@ -74,6 +74,6 @@ MASKED_TYPE(64)
 #endif
 
 #undef MASKED_TYPE
-#include "internal/dom_internal_undefs.h"
+#include "internal/dom_internal_undefs.h"  // NOSONAR
 
 #endif //DOM_TYPES_H
