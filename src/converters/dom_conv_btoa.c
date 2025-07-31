@@ -65,10 +65,12 @@ static RES_VAP(BL) FN(convert, BL)(const TYPE* x, const uint8_t n_plus1)        
         y[i] = FN(psi, BL)(x_mut[0], x_mut[i + 1]);                             \
     }                                                                           \
                                                                                 \
+    RES_VAP(BL) second = { .error = DOM_OK, .vls = NULL };                      \
+                                                                                \
     RES_VAP(BL) first = FN(convert, BL)(&x_mut[1], n);                          \
     IF_ERES_GOTO_CLEANUP(first, DOM_FUNC_CONV_BTOA, 0xAA22)                     \
                                                                                 \
-    RES_VAP(BL) second = FN(convert, BL)(y, n);                                 \
+    second = FN(convert, BL)(y, n);                                             \
     IF_ERES_GOTO_CLEANUP(second, DOM_FUNC_CONV_BTOA, 0xAA33)                    \
                                                                                 \
     TYPE* out = (TYPE*)malloc(n_bytes);                                         \
