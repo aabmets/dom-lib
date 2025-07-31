@@ -77,6 +77,11 @@ ECODE           FN(dom_cmp_lt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, 
 ECODE           FN(dom_cmp_le, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
 ECODE           FN(dom_cmp_gt, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
 ECODE           FN(dom_cmp_ge, BL)          (MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask);                        \
+                                                                                                                        \
+RES_MTP(BL)     FN(dom_select_lt, BL)       (MTP(BL) a_cmp, MTP(BL) b_cmp, MTP(BL) truth_sel, MTP(BL) false_sel);       \
+RES_MTP(BL)     FN(dom_select_le, BL)       (MTP(BL) a_cmp, MTP(BL) b_cmp, MTP(BL) truth_sel, MTP(BL) false_sel);       \
+RES_MTP(BL)     FN(dom_select_gt, BL)       (MTP(BL) a_cmp, MTP(BL) b_cmp, MTP(BL) truth_sel, MTP(BL) false_sel);       \
+RES_MTP(BL)     FN(dom_select_ge, BL)       (MTP(BL) a_cmp, MTP(BL) b_cmp, MTP(BL) truth_sel, MTP(BL) false_sel);       \
 
 
 // ---------------------------------------------------------------------------------------------------------------------

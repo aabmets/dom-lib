@@ -126,7 +126,7 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
             typename traits::mtp,
             typename traits::mtp,
             bool);
-        std::function<bool(TestType, TestType)> unmasked_op;
+        std::function<bool(TestType, TestType)> unmasked_cmp;
     } cases[] = {
         { "LT", traits::dom_cmp_lt, [](TestType a, TestType b){ return a <  b; } },
         { "LE", traits::dom_cmp_le, [](TestType a, TestType b){ return a <= b; } },
@@ -134,7 +134,7 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
         { "GE", traits::dom_cmp_ge, [](TestType a, TestType b){ return a >= b; } },
     };
 
-    for (const auto& [name, masked_cmp, unmasked_op] : cases) {
+    for (const auto& [name, masked_cmp, unmasked_cmp] : cases) {
         SECTION(name) {
             TestType values[2];
             csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
@@ -154,7 +154,7 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
 
             REQUIRE(masked_cmp(mv_a, mv_b, mv_out, full_mask) == DOM_OK);
 
-            const TestType expected = unmasked_op(values[0], values[1])
+            const TestType expected = unmasked_cmp(values[0], values[1])
                 ? (full_mask ? std::numeric_limits<TestType>::max() : static_cast<TestType>(1))
                 : static_cast<TestType>(0);
             REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == DOM_OK);
