@@ -16,21 +16,23 @@
 #include "internal/dom_internal_defs.h"
 
 
-#ifndef DOM_COMPARE
 #define DOM_COMPARE(BL)                                                         \
                                                                                 \
-int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
-{                                                                               \
-    int rc = 0;                                                                 \
+ECODE FN(dom_cmp_lt, BL)(                                                       \
+        MTP(BL) a,                                                              \
+        MTP(BL) b,                                                              \
+        MTP(BL) out,                                                            \
+        const bool full_mask                                                    \
+) {                                                                             \
+    ECODE ecode = DOM_OK;                                                       \
                                                                                 \
     MTP(BL) mvs[3] = { a, b, out };                                             \
-    rc = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                         \
-    if (rc)                                                                     \
-        return rc;                                                              \
+    ecode = FN(dom_conv_many, BL)(mvs, 3, DOMAIN_BOOLEAN);                      \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CMP_LT, 0xAA00)                      \
                                                                                 \
-    MTPA(BL) tmp = FN(dom_alloc_many, BL)(5, out->order, DOMAIN_BOOLEAN);       \
-    if (!tmp)                                                                   \
-        return -1;                                                              \
+    RES_MTPA(BL) res = FN(dom_alloc_many, BL)(5, out->order, DOMAIN_BOOLEAN);   \
+    IF_ECODE_UPDATE_RETURN(res.error, DOM_FUNC_CMP_LT, 0xAA11)                  \
+    MTPA(BL) tmp = res.mvs;                                                     \
                                                                                 \
     MTP(BL) t0 = tmp[0];                                                        \
     MTP(BL) t1 = tmp[1];                                                        \
@@ -38,65 +40,78 @@ int FN(dom_cmp_lt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       
     MTP(BL) t3 = tmp[3];                                                        \
     MTP(BL) diff = tmp[4];                                                      \
                                                                                 \
-    rc = FN(dom_bool_sub, BL)(a, b, diff);                                      \
-    if (!rc) {  /* no error */                                                  \
+    ecode = FN(dom_bool_sub, BL)(a, b, diff);                                   \
+    if (!ecode) {                                                               \
         FN(dom_bool_xor, BL)(a, b, t0);                                         \
         FN(dom_bool_xor, BL)(diff, b, t1);                                      \
                                                                                 \
-        rc = FN(dom_bool_or, BL)(t0, t1, t2);                                   \
-        if (rc)                                                                 \
-            goto cleanup;                                                       \
+        ecode = FN(dom_bool_or, BL)(t0, t1, t2);                                \
+        IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_CMP_LT, 0xAA22)                   \
                                                                                 \
         FN(dom_bool_xor, BL)(a, t2, t3);                                        \
         FN(dom_bool_shr, BL)(t3, BL - 1);                                       \
                                                                                 \
         if (full_mask) {                                                        \
-            MTP(BL) one = FN(dom_mask, BL)(1, out->order, DOMAIN_BOOLEAN);      \
-            rc = FN(dom_bool_sub, BL)(t3, one, t3);                             \
-            FN(dom_free, BL)(one);                                              \
-            if (rc)                                                             \
-                goto cleanup;                                                   \
+            RES_MTP(BL) one = FN(dom_mask, BL)(1, out->order, DOMAIN_BOOLEAN);  \
+            IF_ECODE_GOTO_CLEANUP(one.error, DOM_FUNC_CMP_LT, 0xAA33)           \
+                                                                                \
+            ecode = FN(dom_bool_sub, BL)(t3, one.mv, t3);                       \
+            FN(dom_free, BL)(one.mv);                                           \
+            IF_ECODE_GOTO_CLEANUP(ecode, DOM_FUNC_CMP_LT, 0xAA44)               \
+                                                                                \
             FN(dom_bool_not, BL)(t3);                                           \
         }                                                                       \
         memcpy(out->shares, t3->shares, t3->share_bytes);                       \
-        rc = FN(dom_refresh, BL)(out);                                          \
+        ecode = FN(dom_refresh, BL)(out);                                       \
     }                                                                           \
                                                                                 \
     cleanup:                                                                    \
     FN(dom_free_many, BL)(tmp, 5, true);                                        \
     asm volatile ("" ::: "memory");                                             \
-    return rc;                                                                  \
+    return ecode;                                                               \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_cmp_le, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
-{                                                                               \
-    int rc = FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */            \
-    if (!rc) {                                                                  \
-        UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                       \
-        out->shares[0] ^= mask;                                                 \
-    }                                                                           \
-    return rc;                                                                  \
+ECODE FN(dom_cmp_le, BL)(                                                       \
+        MTP(BL) a,                                                              \
+        MTP(BL) b,                                                              \
+        MTP(BL) out,                                                            \
+        const bool full_mask                                                    \
+) {                                                                             \
+    const ECODE ecode = FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */ \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CMP_LE, 0xAA55)                      \
+                                                                                \
+    const UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                     \
+    out->shares[0] ^= mask;                                                     \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_cmp_gt, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
-{                                                                               \
-    return FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */              \
+ECODE FN(dom_cmp_gt, BL)(                                                       \
+        MTP(BL) a,                                                              \
+        MTP(BL) b,                                                              \
+        MTP(BL) out,                                                            \
+        const bool full_mask                                                    \
+) {                                                                             \
+    const ECODE ecode = FN(dom_cmp_lt, BL)(b, a, out, full_mask);  /* NOLINT */ \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CMP_GT, 0xAA66)                      \
+    return DOM_OK;                                                              \
 }                                                                               \
                                                                                 \
                                                                                 \
-int FN(dom_cmp_ge, BL)(MTP(BL) a, MTP(BL) b, MTP(BL) out, bool full_mask)       \
-{                                                                               \
-    int rc = FN(dom_cmp_lt, BL)(a, b, out, full_mask);                          \
-    if (!rc) {                                                                  \
-        UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                       \
-        out->shares[0] ^= mask;                                                 \
-    }                                                                           \
-    return rc;                                                                  \
+ECODE FN(dom_cmp_ge, BL)(                                                       \
+        MTP(BL) a,                                                              \
+        MTP(BL) b,                                                              \
+        MTP(BL) out,                                                            \
+        const bool full_mask                                                    \
+) {                                                                             \
+    const ECODE ecode = FN(dom_cmp_lt, BL)(a, b, out, full_mask);               \
+    IF_ECODE_UPDATE_RETURN(ecode, DOM_FUNC_CMP_GE, 0xAA77)                      \
+                                                                                \
+    const UINT(BL) mask = full_mask ? (UINT(BL))0 - 1 : 1u;                     \
+    out->shares[0] ^= mask;                                                     \
+    return DOM_OK;                                                              \
 }                                                                               \
-
-#endif //DOM_COMPARE
 
 
 DOM_COMPARE(8)
