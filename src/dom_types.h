@@ -47,9 +47,9 @@ typedef struct {                    \
 } MT(BL);                           \
                                     \
 typedef struct {                    \
-    UINT(BL) value;                 \
+    UINT(BL)* vls;                  \
     uint32_t error;                 \
-} RES_UINT(BL);                     \
+} RES_VAP(BL);                      \
                                     \
 typedef struct {                    \
     MTP(BL) mv;                     \
