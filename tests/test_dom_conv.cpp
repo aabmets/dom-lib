@@ -55,6 +55,12 @@ DEFINE_DOM_TRAITS(64)
 #undef DEFINE_DOM_TRAITS
 
 
+template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
+}
+
+
 TEMPLATE_TEST_CASE(
         "Assert DOM converter functions work correctly",
         "[unittest][dom_conv]", uint8_t, uint16_t, uint32_t, uint64_t
@@ -63,8 +69,10 @@ TEMPLATE_TEST_CASE(
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
-    TestType value[1];
-    csprng_read_array(reinterpret_cast<uint8_t*>(value), sizeof(value));
+    std::array<TestType, 1> value_array = {};
+    TestType* value = value_array.data();
+
+    csprng_read_array(as_byte_ptr(value), sizeof(value));
     auto expected = static_cast<TestType>(value[0]);
 
     // Mask expected value with boolean domain
@@ -72,7 +80,9 @@ TEMPLATE_TEST_CASE(
     REQUIRE(res.error == DOM_OK);
     REQUIRE(res.mv != nullptr);
     REQUIRE(res.mv->domain == DOMAIN_BOOLEAN);
-    TestType unmasked[1];
+
+    std::array<TestType, 1> unmasked_array = {};
+    TestType* unmasked = unmasked_array.data();
 
     REQUIRE(traits::dom_conv_btoa(res.mv) == DOM_OK);
 
@@ -101,8 +111,10 @@ TEMPLATE_TEST_CASE(
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
-    TestType texts[COUNT];
-    csprng_read_array(reinterpret_cast<uint8_t*>(texts), sizeof(texts));
+    std::array<TestType, COUNT> texts_array = {};
+    TestType* texts = texts_array.data();
+
+    csprng_read_array(as_byte_ptr(texts), sizeof(texts));
 
     auto res = traits::dom_mask_many(
         texts, COUNT, static_cast<uint8_t>(order), DOMAIN_BOOLEAN
@@ -111,7 +123,9 @@ TEMPLATE_TEST_CASE(
     REQUIRE(res.mvs != nullptr);
     for (uint8_t i = 0; i < COUNT; ++i)
         REQUIRE(res.mvs[i]->domain == DOMAIN_BOOLEAN);
-    TestType unmasked[1];
+
+    std::array<TestType, 1> unmasked_array = {};
+    TestType* unmasked = unmasked_array.data();
 
     REQUIRE(traits::dom_conv_many(res.mvs, COUNT, DOMAIN_ARITHMETIC) == DOM_OK);
     for (uint8_t i = 0; i < COUNT; ++i) {

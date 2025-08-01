@@ -54,6 +54,12 @@ DEFINE_DOM_TRAITS(64, 8)    // 8/1 ratio
 #undef DEFINE_DOM_TRAITS
 
 
+template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
+}
+
+
 template<typename L, typename S>
 static void roundtrip(uint8_t order)
 {
@@ -61,7 +67,7 @@ static void roundtrip(uint8_t order)
     constexpr size_t PARTS = sizeof(L) / sizeof(S);
 
     L original;
-    csprng_read_array(reinterpret_cast<uint8_t*>(&original), sizeof(original));
+    csprng_read_array(as_byte_ptr(&original), sizeof(original));
 
     constexpr unsigned DIST_BITS = sizeof(S) * 8u;
     std::array<S, PARTS> chunks{};
@@ -80,7 +86,9 @@ static void roundtrip(uint8_t order)
     REQUIRE(mv_large.error == DOM_OK);
     REQUIRE(mv_large.mv != nullptr);
 
-    L unmasked_large[1];
+    std::array<L, 1> unmasked_large_array = {};
+    L* unmasked_large = unmasked_large_array.data();
+
     REQUIRE(traits::unmask_large(mv_large.mv, unmasked_large, 0) == DOM_OK);
     REQUIRE(unmasked_large[0] == original);
 
@@ -88,7 +96,9 @@ static void roundtrip(uint8_t order)
     REQUIRE(back.error == DOM_OK);
     REQUIRE(back.mvs != nullptr);
 
-    S unmasked_small[1];
+    std::array<S, 1> unmasked_small_array = {};
+    S* unmasked_small = unmasked_small_array.data();
+
     for (size_t i = 0; i < PARTS; ++i) {
         auto* mv = back.mvs[i];
         REQUIRE(mv != nullptr);
