@@ -49,13 +49,13 @@ TEST_CASE("CSPRNG generated data passes Shannon entropy estimation", "[unittest]
 
     const auto &samples = getCsprngSamples(N_SAMPLES);
 
-    unsigned int counts[ALPHABET_SIZE] = {};
+    std::array<unsigned int, ALPHABET_SIZE> counts_array = {};
     for (const unsigned char sample : samples) {
-        counts[sample]++;
+        counts_array[sample]++;
     }
 
     double entropy = 0.0;
-    for (const unsigned int count : counts) {
+    for (const unsigned int count : counts_array) {
         if (count > 0) {
             const double p = static_cast<double>(count) / N_SAMPLES;
             entropy -= p * (std::log(p) / std::log(2.0));

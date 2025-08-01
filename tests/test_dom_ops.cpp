@@ -84,13 +84,21 @@ DEFINE_DOM_TRAITS(64)
 #undef DEFINE_DOM_TRAITS
 
 
+
+
+template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);
+}
+
+
 template<typename T>
 void test_binary_operation(
-        ECODE (*masked_op)(
+        const std::function<ECODE(
             typename dom_traits<T>::mskd_t*,
             typename dom_traits<T>::mskd_t*,
             typename dom_traits<T>::mskd_t*
-        ),
+        )>& masked_op,
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
@@ -98,8 +106,10 @@ void test_binary_operation(
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
-    T values[2];
-    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    std::array<T, 2> values_array = {};
+    T* values = values_array.data();
+    csprng_read_array(as_byte_ptr(values), sizeof(values));
+
     auto a_res = traits::dom_mask(values[0], order, domain);
     auto b_res = traits::dom_mask(values[1], order, domain);
     auto out_res = traits::dom_mask(0, order, domain);
@@ -112,7 +122,9 @@ void test_binary_operation(
     auto* mv_a = a_res.mv;
     auto* mv_b = b_res.mv;
     auto* mv_out = out_res.mv;
-    T unmasked[1];
+
+    std::array<T, 1> unmasked_array = {};
+    T* unmasked = unmasked_array.data();
 
     REQUIRE(masked_op(mv_a, mv_b, mv_out) == DOM_OK);
 
@@ -138,7 +150,9 @@ void test_binary_operation(
 
 template<typename T>
 void test_unary_operation(
-        ECODE (*masked_op)(typename dom_traits<T>::mskd_t*),
+        const std::function<ECODE(
+            typename dom_traits<T>::mskd_t*
+        )>& masked_op,
         const std::function<T(T)>& unmasked_op,
         domain_t domain
 ) {
@@ -146,13 +160,17 @@ void test_unary_operation(
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
-    T values[1];
-    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    std::array<T, 1> values_array = {};
+    T* values = values_array.data();
+    csprng_read_array(as_byte_ptr(values), sizeof(values));
+
     auto res = traits::dom_mask(values[0], order, domain);
     REQUIRE(res.error == DOM_OK);
     REQUIRE(res.mv != nullptr);
     auto* mv = res.mv;
-    T unmasked[1];
+
+    std::array<T, 1> unmasked_array = {};
+    T* unmasked = unmasked_array.data();
 
     REQUIRE(masked_op(mv) == DOM_OK);
 
@@ -173,7 +191,9 @@ void test_unary_operation(
 
 template<typename T>
 void test_shift_rotate_operation(
-        ECODE (*masked_op)(typename dom_traits<T>::mskd_t*, uint8_t),
+        const std::function<ECODE(
+            typename dom_traits<T>::mskd_t*, uint8_t
+        )>& masked_op,
         const std::function<T(T, T)>& unmasked_op,
         domain_t domain
 ) {
@@ -181,13 +201,17 @@ void test_shift_rotate_operation(
     const int order = GENERATE_COPY(range(1, 4));
     INFO("security order = " << order);
 
-    T values[1];
-    csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+    std::array<T, 1> values_array = {};
+    T* values = values_array.data();
+    csprng_read_array(as_byte_ptr(values), sizeof(values));
+
     auto res = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
     REQUIRE(res.error == DOM_OK);
     REQUIRE(res.mv != nullptr);
     auto* mv = res.mv;
-    T unmasked[1];
+
+    std::array<T, 1> unmasked_array = {};
+    T* unmasked = unmasked_array.data();
 
     uint8_t offset = static_cast<uint8_t>(mv->bit_length / 2) - 1;
     REQUIRE(masked_op(mv, offset) == DOM_OK);

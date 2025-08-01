@@ -107,12 +107,12 @@ TEMPLATE_TEST_CASE(
         std::function<bool(TestType, TestType)> unmasked_select;
     };
 
-    const selector_case cases[] = {
+    const std::array<selector_case, 4> cases = {{
         { "LT", traits::dom_select_lt, [](TestType a, TestType b){ return a <  b; } },
         { "LE", traits::dom_select_le, [](TestType a, TestType b){ return a <= b; } },
         { "GT", traits::dom_select_gt, [](TestType a, TestType b){ return a >  b; } },
         { "GE", traits::dom_select_ge, [](TestType a, TestType b){ return a >= b; } },
-    };
+    }};
 
     struct pair_case {
         const char* desc;
@@ -122,14 +122,15 @@ TEMPLATE_TEST_CASE(
         TestType rhs_val;
     };
 
-    const pair_case pairs[] = {
+    const std::array<pair_case, 4> pairs = {{
         { "half vs max" , mv_half, mv_max , half_v , max_v  },
         { "max  vs half", mv_max , mv_half, max_v  , half_v },
         { "zero vs half", mv_zero, mv_half, zero_v , half_v },
         { "half vs zero", mv_half, mv_zero, half_v , zero_v },
-    };
+    }};
 
-    TestType unmasked[1];
+    std::array<TestType, 1> unmasked_array = {};
+    TestType* unmasked = unmasked_array.data();
 
     for (const auto& c : cases) {
         SECTION(c.name) {
