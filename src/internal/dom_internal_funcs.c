@@ -44,7 +44,7 @@ DOM_INTERNAL_FUNCS_IMPL(64)
 
 
 #if defined(_WIN32) || defined(_WIN64)
-    #undef UINT  // conflict with wincrypt.h
+    #undef UINT  // NOSONAR - conflict with wincrypt.h
     #include <windows.h>
     #include <wincrypt.h>
     ECODE csprng_read_array(uint8_t* buffer, const uint32_t length)

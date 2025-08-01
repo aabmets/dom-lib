@@ -76,6 +76,12 @@ DEFINE_DOM_TRAITS(64)
 #undef DEFINE_DOM_TRAITS
 
 
+template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
+}
+
+
 TEMPLATE_TEST_CASE(
         "DOM core functions - full coverage",
         "[unittest][dom_core]", uint8_t, uint16_t, uint32_t, uint64_t
@@ -99,7 +105,7 @@ TEMPLATE_TEST_CASE(
         REQUIRE(res.mv->share_count == order + 1);
         REQUIRE(res.mv->bit_length == sizeof(TestType) * CHAR_BIT);
 
-        auto* shares = reinterpret_cast<TestType*>(res.mv->shares);
+        auto* shares = res.mv->shares;
         for (uint8_t i = 0; i < res.mv->share_count; ++i)
             REQUIRE(shares[i] == static_cast<TestType>(0));
 
@@ -128,13 +134,15 @@ TEMPLATE_TEST_CASE(
     SECTION("Mask / unmask round‑trip retains original value")
     {
         TestType value;
-        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        csprng_read_array(as_byte_ptr(&value), sizeof(value));
 
         auto res = traits::dom_mask(value, order, domain);
         REQUIRE(res.error == DOM_OK);
         REQUIRE(res.mv != nullptr);
 
-        TestType unmasked[1];
+        std::array<TestType, 1> unmasked_array = {};
+        TestType* unmasked = unmasked_array.data();
+
         REQUIRE(traits::dom_unmask(res.mv, unmasked, 0) == DOM_OK);
         REQUIRE(unmasked[0] == value);
 
@@ -146,7 +154,7 @@ TEMPLATE_TEST_CASE(
     {
         constexpr uint8_t count = 5;
         std::vector<TestType> values(count);
-        csprng_read_array(reinterpret_cast<uint8_t*>(values.data()), count * sizeof(TestType));
+        csprng_read_array(as_byte_ptr(values.data()), count * sizeof(TestType));
 
         auto res = traits::dom_mask_many(values.data(), count, order, domain);
         REQUIRE(res.error == DOM_OK);
@@ -164,7 +172,7 @@ TEMPLATE_TEST_CASE(
     SECTION("clear zeroes all shares while keeping meta‑data intact")
     {
         TestType value{};
-        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        csprng_read_array(as_byte_ptr(&value), sizeof(value));
 
         auto res = traits::dom_mask(value, order, domain);
         REQUIRE(res.error == DOM_OK);
@@ -172,7 +180,7 @@ TEMPLATE_TEST_CASE(
 
         REQUIRE(traits::dom_clear(res.mv) == DOM_OK);
 
-        auto* shares = reinterpret_cast<TestType*>(res.mv->shares);
+        auto* shares = res.mv->shares;
         for (uint8_t i = 0; i < res.mv->share_count; ++i)
             REQUIRE(shares[i] == static_cast<TestType>(0));
 
@@ -183,19 +191,21 @@ TEMPLATE_TEST_CASE(
     SECTION("refresh keeps logical value but changes at least one share")
     {
         TestType value{};
-        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        csprng_read_array(as_byte_ptr(&value), sizeof(value));
 
         auto res = traits::dom_mask(value, order, domain);
         REQUIRE(res.error == DOM_OK);
         REQUIRE(res.mv != nullptr);
 
-        const auto* after = reinterpret_cast<const TestType*>(res.mv->shares);
+        const auto* after = res.mv->shares;
 
         // Snapshot previous shares
         std::vector<TestType> before(res.mv->share_count);
         std::memcpy(before.data(), after, res.mv->share_bytes);
 
-        TestType unmasked[1];
+        std::array<TestType, 1> unmasked_array = {};
+        TestType* unmasked = unmasked_array.data();
+
         uint8_t retries = 5;
         bool changed = false;
 
@@ -220,7 +230,7 @@ TEMPLATE_TEST_CASE(
     {
         constexpr uint8_t count = 5;
         std::vector<TestType> vals(count);
-        csprng_read_array(reinterpret_cast<uint8_t*>(vals.data()), count * sizeof(TestType));
+        csprng_read_array(as_byte_ptr(vals.data()), count * sizeof(TestType));
 
         auto res = traits::dom_mask_many(vals.data(), count, order, domain);
         REQUIRE(res.error == DOM_OK);
@@ -239,13 +249,15 @@ TEMPLATE_TEST_CASE(
         }
 
         traits::dom_refresh_many(res.mvs, count);
-        TestType unmasked[1];
+
+        std::array<TestType, 1> unmasked_array = {};
+        TestType* unmasked = unmasked_array.data();
         bool changed = false;
 
         for (uint8_t i = 0; i < count; ++i) {
             REQUIRE(traits::dom_unmask(res.mvs[i], unmasked, 0) == 0);
             REQUIRE(unmasked[0] == vals[i]);
-            const auto* after = reinterpret_cast<const TestType*>(res.mvs[i]->shares);
+            const auto* after = res.mvs[i]->shares;
             for (uint8_t j = 0; j < res.mvs[i]->share_count; ++j)
                 changed |= (after[j] != snapshots[i][j]);
         }
@@ -258,7 +270,7 @@ TEMPLATE_TEST_CASE(
     SECTION("clone performs a deep copy with and without clear_shares")
     {
         TestType value{};
-        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        csprng_read_array(as_byte_ptr(&value), sizeof(value));
 
         auto orig        = traits::dom_mask(value, order, domain);
         auto clone_full  = traits::dom_clone(orig.mv, false);
@@ -275,9 +287,11 @@ TEMPLATE_TEST_CASE(
         ) == 0); // identical content
 
         // Mutate clone, orig must stay intact
-        auto* c_shares = reinterpret_cast<TestType*>(clone_full.mv->shares);
+        auto* c_shares = clone_full.mv->shares;
         c_shares[0] ^= static_cast<TestType>(1);
-        TestType unmasked[1];
+
+        std::array<TestType, 1> unmasked_array = {};
+        TestType* unmasked = unmasked_array.data();
 
         REQUIRE(traits::dom_unmask(orig.mv, unmasked, 0) == DOM_OK);
         REQUIRE(unmasked[0] == value);
@@ -288,7 +302,7 @@ TEMPLATE_TEST_CASE(
         REQUIRE(clone_zero.mv != orig.mv);
         REQUIRE(clone_zero.mv->order == orig.mv->order);
 
-        auto* z_shares = reinterpret_cast<TestType*>(clone_zero.mv->shares);
+        auto* z_shares = clone_zero.mv->shares;
         for (uint8_t i = 0; i < clone_zero.mv->share_count; ++i)
             REQUIRE(z_shares[i] == static_cast<TestType>(0));
 
@@ -300,8 +314,8 @@ TEMPLATE_TEST_CASE(
     // ---------------------------------------------------------------------
     SECTION("clone_many replicates semantics across array")
     {
-        TestType value{};
-        csprng_read_array(reinterpret_cast<uint8_t*>(&value), sizeof(value));
+        TestType value;
+        csprng_read_array(as_byte_ptr(&value), sizeof(value));
 
         auto orig = traits::dom_mask(value, order, domain);
         constexpr uint8_t count = 4;
@@ -326,9 +340,11 @@ TEMPLATE_TEST_CASE(
         }
 
         // mutate one clone to ensure independence
-        auto* shares0 = reinterpret_cast<TestType*>(full_clones.mvs[0]->shares);
+        auto* shares0 = full_clones.mvs[0]->shares;
         shares0[0] ^= static_cast<TestType>(1);
-        TestType unmasked[1];
+
+        std::array<TestType, 1> unmasked_array = {};
+        TestType* unmasked = unmasked_array.data();
 
         REQUIRE(traits::dom_unmask(orig.mv, unmasked, 0) == DOM_OK);
         REQUIRE(unmasked[0] == value);
@@ -350,7 +366,7 @@ TEMPLATE_TEST_CASE(
         for (uint8_t i = 0; i < count; ++i) {
             auto mv = zero_clones.mvs[i];
             REQUIRE(mv != nullptr);
-            auto* shares = reinterpret_cast<TestType*>(mv->shares);
+            auto* shares = mv->shares;
             for (uint8_t s = 0; s < mv->share_count; ++s)
                 REQUIRE(shares[s] == static_cast<TestType>(0));
         }
