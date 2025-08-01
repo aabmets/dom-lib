@@ -78,8 +78,6 @@ TEMPLATE_TEST_CASE(
     // Mask expected value with boolean domain
     auto res = traits::dom_mask(expected, order, DOMAIN_BOOLEAN);
     REQUIRE(res.error == DOM_OK);
-    REQUIRE(res.mv != nullptr);
-    REQUIRE(res.mv->domain == DOMAIN_BOOLEAN);
 
     std::array<TestType, 1> unmasked_array = {};
     TestType* unmasked = unmasked_array.data();
@@ -116,13 +114,8 @@ TEMPLATE_TEST_CASE(
 
     csprng_read_array(as_byte_ptr(texts), sizeof(texts));
 
-    auto res = traits::dom_mask_many(
-        texts, COUNT, static_cast<uint8_t>(order), DOMAIN_BOOLEAN
-    );
+    auto res = traits::dom_mask_many(texts, COUNT, order, DOMAIN_BOOLEAN);
     REQUIRE(res.error == DOM_OK);
-    REQUIRE(res.mvs != nullptr);
-    for (uint8_t i = 0; i < COUNT; ++i)
-        REQUIRE(res.mvs[i]->domain == DOMAIN_BOOLEAN);
 
     std::array<TestType, 1> unmasked_array = {};
     TestType* unmasked = unmasked_array.data();

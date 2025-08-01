@@ -60,6 +60,12 @@ DEFINE_DOM_TRAITS(64)
 #undef DEFINE_DOM_TRAITS
 
 
+template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
+}
+
+
 TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
         "[unittest][dom_cmp]", uint8_t, uint16_t, uint32_t, uint64_t
 ) {
@@ -85,7 +91,8 @@ TEMPLATE_TEST_CASE("dom_cmp_lt handles boundary values",
     auto* mv_max  = max_res.mv;
     auto* mv_out  = out_res.mv;
 
-    TestType unmasked[1];
+    std::array<TestType, 1> unmasked_array = {};
+    TestType* unmasked = unmasked_array.data();
 
     /* 0 < MAX ⇒ true */
     REQUIRE(traits::dom_cmp_lt(mv_zero, mv_max, mv_out, full_mask) == DOM_OK);
@@ -119,7 +126,7 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
     INFO("masking domain = " << (domain == DOMAIN_ARITHMETIC ? "arithmetic" : "boolean"));
     INFO("full_mask = " << std::boolalpha << full_mask);
 
-    const struct {
+    struct ComparisonCase {
         const char* name;
         ECODE (*masked_cmp)(
             typename traits::mtp,
@@ -127,17 +134,20 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
             typename traits::mtp,
             bool);
         std::function<bool(TestType, TestType)> unmasked_cmp;
-    } cases[] = {
+    };
+
+    const std::array<ComparisonCase, 4> cases = {{
         { "LT", traits::dom_cmp_lt, [](TestType a, TestType b){ return a <  b; } },
         { "LE", traits::dom_cmp_le, [](TestType a, TestType b){ return a <= b; } },
         { "GT", traits::dom_cmp_gt, [](TestType a, TestType b){ return a >  b; } },
         { "GE", traits::dom_cmp_ge, [](TestType a, TestType b){ return a >= b; } },
-    };
+    }};
 
     for (const auto& [name, masked_cmp, unmasked_cmp] : cases) {
         SECTION(name) {
-            TestType values[2];
-            csprng_read_array(reinterpret_cast<uint8_t*>(values), sizeof(values));
+            std::array<TestType, 2> values_array = {};
+            TestType* values = values_array.data();
+            csprng_read_array(as_byte_ptr(values), sizeof(values));
 
             auto a_res = traits::dom_mask(values[0], order, domain);
             auto b_res = traits::dom_mask(values[1], order, domain);
@@ -151,13 +161,18 @@ TEMPLATE_TEST_CASE("Assert DOM comparison operations work correctly",
             auto* mv_b = b_res.mv;
             auto* mv_out = out_res.mv;
 
-            TestType unmasked[1];
+            std::array<TestType, 1> unmasked_array = {};
+            TestType* unmasked = unmasked_array.data();
+
+            TestType expected = full_mask
+                ? std::numeric_limits<TestType>::max()
+                : static_cast<TestType>(1);
+
+            expected = unmasked_cmp(values[0], values[1])
+                ? expected
+                : static_cast<TestType>(0);
 
             REQUIRE(masked_cmp(mv_a, mv_b, mv_out, full_mask) == DOM_OK);
-
-            const TestType expected = unmasked_cmp(values[0], values[1])
-                ? (full_mask ? std::numeric_limits<TestType>::max() : static_cast<TestType>(1))
-                : static_cast<TestType>(0);
             REQUIRE(traits::dom_unmask(mv_out, unmasked, 0) == DOM_OK);
             REQUIRE(unmasked[0] == expected);
 

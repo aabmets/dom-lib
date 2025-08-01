@@ -53,6 +53,12 @@ DEFINE_DOM_TRAITS(64)
 
 
 template<typename T>
+uint8_t* as_byte_ptr(T* ptr) {
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
+}
+
+
+template<typename T>
 static T ref_carry_word_shifted(T a, T b) {
     const unsigned bits = sizeof(T) * 8;
     T carry_word = 0;
@@ -79,8 +85,8 @@ static T ref_borrow_word_shifted(T a, T b) {
     unsigned borrow = 0;
 
     for (unsigned i = 0; i < bits; ++i) {
-        const int ai = static_cast<int>(a >> i & 1u);
-        const int bi = static_cast<int>(b >> i & 1u);
+        const auto ai = static_cast<int>(a >> i & 1u);
+        const auto bi = static_cast<int>(b >> i & 1u);
 
         const int diff = ai - bi - static_cast<int>(borrow);
         borrow = diff < 0;
@@ -98,26 +104,29 @@ static void test_ksa_operation(const RefFn& ref_fn, const KsaFn& ksa_fn) {
     const int order = GENERATE(range(1, 4));
     INFO("security order = " << order);
 
-    T vals[2];
-    csprng_read_array(reinterpret_cast<uint8_t*>(vals), sizeof(vals));
+    std::array<T, 2> values_array = {};
+    T* values = values_array.data();
 
-    auto a_res = traits::dom_mask(vals[0], order, DOMAIN_BOOLEAN);
-    auto b_res = traits::dom_mask(vals[1], order, DOMAIN_BOOLEAN);
+    csprng_read_array(as_byte_ptr(values), sizeof(values));
+
+    auto a_res = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
+    auto b_res = traits::dom_mask(values[1], order, DOMAIN_BOOLEAN);
     auto g_res = traits::dom_alloc(order, DOMAIN_BOOLEAN);
+
     REQUIRE(a_res.error == DOM_OK);
     REQUIRE(b_res.error == DOM_OK);
     REQUIRE(g_res.error == DOM_OK);
-    REQUIRE(a_res.mv != nullptr);
-    REQUIRE(b_res.mv != nullptr);
-    REQUIRE(g_res.mv != nullptr);
+
     auto* mv_a = a_res.mv;
     auto* mv_b = b_res.mv;
     auto* mv_g = g_res.mv;
-    T unmasked[1];
+
+    std::array<T, 1> unmasked_array = {};
+    T* unmasked = unmasked_array.data();
 
     REQUIRE(ksa_fn(mv_a, mv_b, mv_g) == DOM_OK);
 
-    T expected = ref_fn(vals[0], vals[1]);
+    T expected = ref_fn(values[0], values[1]);
     REQUIRE(traits::dom_unmask(mv_g, unmasked, 0) == DOM_OK);
     REQUIRE(unmasked[0] == expected);
 

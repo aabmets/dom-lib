@@ -215,7 +215,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(unmasked[0] == value);
 
             for (uint8_t i = 0; i < res.mv->share_count; ++i)
-                changed |= (after[i] != before[i]);
+                changed = changed || after[i] != before[i];
 
             if (changed)
                 break;
@@ -259,7 +259,7 @@ TEMPLATE_TEST_CASE(
             REQUIRE(unmasked[0] == vals[i]);
             const auto* after = res.mvs[i]->shares;
             for (uint8_t j = 0; j < res.mvs[i]->share_count; ++j)
-                changed |= (after[j] != snapshots[i][j]);
+                changed = changed || after[j] != snapshots[i][j];
         }
         REQUIRE(changed);  // at least one share altered
 

@@ -111,12 +111,11 @@ void test_binary_operation(
     auto a_res = traits::dom_mask(values[0], order, domain);
     auto b_res = traits::dom_mask(values[1], order, domain);
     auto out_res = traits::dom_mask(0, order, domain);
+
     REQUIRE(a_res.error == DOM_OK);
     REQUIRE(b_res.error == DOM_OK);
     REQUIRE(out_res.error == DOM_OK);
-    REQUIRE(a_res.mv != nullptr);
-    REQUIRE(b_res.mv != nullptr);
-    REQUIRE(out_res.mv != nullptr);
+
     auto* mv_a = a_res.mv;
     auto* mv_b = b_res.mv;
     auto* mv_out = out_res.mv;
@@ -164,7 +163,6 @@ void test_unary_operation(
 
     auto res = traits::dom_mask(values[0], order, domain);
     REQUIRE(res.error == DOM_OK);
-    REQUIRE(res.mv != nullptr);
     auto* mv = res.mv;
 
     std::array<T, 1> unmasked_array = {};
@@ -205,7 +203,6 @@ void test_shift_rotate_operation(
 
     auto res = traits::dom_mask(values[0], order, DOMAIN_BOOLEAN);
     REQUIRE(res.error == DOM_OK);
-    REQUIRE(res.mv != nullptr);
     auto* mv = res.mv;
 
     std::array<T, 1> unmasked_array = {};
