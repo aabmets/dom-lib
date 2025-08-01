@@ -60,7 +60,7 @@ TEST_CASE(
     REQUIRE(s.find("out of memory")  != std::string::npos);
     REQUIRE(s.find("dom_alloc")      != std::string::npos);
     REQUIRE(s.find("(code 0x0C)")    != std::string::npos);
-    REQUIRE(s.find("(id 0x02)")      != std::string::npos);
+    REQUIRE(s.find("(id 0x00)")      != std::string::npos);
     REQUIRE(s.find("line id 0x1234") != std::string::npos);
     REQUIRE(std::strlen(msg) < ERR_MSG_LENGTH);
 }
