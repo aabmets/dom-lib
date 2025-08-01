@@ -88,7 +88,7 @@ DEFINE_DOM_TRAITS(64)
 
 template<typename T>
 uint8_t* as_byte_ptr(T* ptr) {
-    return reinterpret_cast<uint8_t*>(ptr);
+    return reinterpret_cast<uint8_t*>(ptr);  // NOSONAR
 }
 
 
